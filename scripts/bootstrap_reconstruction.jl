@@ -43,6 +43,14 @@ end
 savefig(plotsdir("intensities.with.errors.2.32.pdf"))
 
 let bin=40
+    p = slice(data, :phase, bin)
+    δp = slice(data, :phase, bin; ind=3)
+    bar(p, yerr = δp, linecolor=:black, markerstrokecolor=:black,
+        xticks=(1:length(p), ["($L,$M)" for (L,M) in LMs]), xlab="waves", lab="")
+end
+savefig(plotsdir("phase.with.errors.2.32.pdf"))
+
+let bin=40
     i = slice(data, :inten, bin)
     # errors
     δi = slice(data, :inten, bin; ind=3)
@@ -72,10 +80,11 @@ let bin=40, bin1 = 10, bin2=90
     calv = dNdcosθ.(cosθv; amps=amps)
     # bootstrap
     bstp = [let
+                # i′ = [μ < σ ? μ : μ+randn()*σ for (μ,σ) in zip(i,δi)]
                 i′ = i .+ randn(length(i)) .* δi
                 i′ = map(v -> v < 0 ? 0.0 : v, i′)
-                i′ .*= sum(i) / sum(i′)
-                p′ = p+randn()*δp
+                # i′ .*= sum(i) / sum(i′)
+                p′ = p#+randn()*δp
                 dNdcosθ.(cosθv; amps=constructamps(i′,p′))
         end for _ in 1:1000]
     plot(layout=grid(2,2), size=(900,700), title=["examples" "ribbon" "slice1" "slice2"])
@@ -97,4 +106,36 @@ let bin=40, bin1 = 10, bin2=90
     vline!(sp=4, [calv[bin2]], lab="", l=(2,:red))
 end
 savefig(plotsdir("bootstrap.2.32.pdf"))
+# savefig(plotsdir("intensities.only.2.32.pdf"))
 # savefig(plotsdir("bootstrap.2.32.norm.pdf"))
+
+#
+#        _|                                _|    _|
+#    _|_|_|    _|_|    _|_|_|      _|_|_|      _|_|_|_|  _|    _|
+#  _|    _|  _|_|_|_|  _|    _|  _|_|      _|    _|      _|    _|
+#  _|    _|  _|        _|    _|      _|_|  _|    _|      _|    _|
+#    _|_|_|    _|_|_|  _|    _|  _|_|_|    _|      _|_|    _|_|_|
+#                                                              _|
+#                                                          _|_|
+
+# ρg(x,μ,σ) = 1/sqrt(2π)/σ*exp(-(x-μ)^2/σ^2/2)
+# ρ(x,μ,σ) = ρg(x,μ,σ)+ρg(x,-μ,σ)
+#
+# meanρ(μ,σ) = quadgk(x->x*ρ(x,μ,σ), 0.0, Inf)[1]
+# erroρ(μ,σ) = quadgk(x->x^2*ρ(x,μ,σ), 0.0, Inf)[1]
+#
+# meanρ(1.1,1.2)
+#
+# let μ0 = 1.2, σ0 = 1.0
+#     function f!(F, x)
+#         μ = meanρ(x[1],x[2])
+#         σsq = erroρ(x[1],x[2])-μ^2
+#         F[1] = μ0 - μ
+#         F[2] = σ0^2 - σsq
+#     end
+#     nlsolve(f!, [μ0, σ0])
+# end
+#
+# meanρ(-1440.6706656358228, 37.99300857146489)
+# sqrt(erroρ(-1440.6706656358228, 37.99300857146489) -  meanρ(-1440.6706656358228, 37.99300857146489))
+#
