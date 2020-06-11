@@ -4,6 +4,7 @@ using DrWatson
 using DoubleRegge
 using QuadGK
 using Plots
+using Statistics
 theme(:wong; size=(500,350))
 #
 data = [(inten = get_intesity(L,M),
@@ -31,8 +32,6 @@ let bin=40
     i2 = sum(slice(data, :inten, bin))
     i1 ≈ i2
 end
-
-using Statistics
 
 let bin=40
     i = slice(data, :inten, bin)
@@ -108,6 +107,7 @@ end
 savefig(plotsdir("bootstrap.2.32.pdf"))
 # savefig(plotsdir("intensities.only.2.32.pdf"))
 # savefig(plotsdir("bootstrap.2.32.norm.pdf"))
+
 
 #
 #        _|                                _|    _|
