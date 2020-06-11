@@ -4,6 +4,7 @@ using Parameters
 using DelimitedFiles
 using QuadGK
 using PartialWaveFunctions
+using GSL
 
 export arg, Psi
 export LMs
@@ -20,5 +21,9 @@ include("roottrees.jl")
 export recamp, constructamps
 export dNdϕ, dNdcosθ
 include("reconstruction.jl")
+
+export modelS
+include("masses.jl")
+include("modelS.jl")
 
 end  # module DoubleRegge

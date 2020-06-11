@@ -1,6 +1,6 @@
 
 recamp(cosθ,ϕ,amps) =
-    sum(a*Phi(L,M,cosθ,ϕ) for
+    sum(a*Psi(L,M,cosθ,ϕ) for
     (a, (L, M)) in zip(amps,LMs))
 
 """
