@@ -23,7 +23,13 @@ export dNdϕ, dNdcosθ
 include("reconstruction.jl")
 
 export modelS
+include("kinematics.jl")
 include("masses.jl")
 include("modelS.jl")
+
+export α_a2, α_f2, α_ℙ
+export modelDR
+export trajectory
+include("modelD.jl")
 
 end  # module DoubleRegge
