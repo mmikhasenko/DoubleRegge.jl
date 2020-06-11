@@ -5,6 +5,7 @@ using DelimitedFiles
 using QuadGK
 using PartialWaveFunctions
 using GSL
+using Statistics
 
 export arg, Psi
 export LMs
@@ -31,5 +32,9 @@ export α_a2, α_f2, α_ℙ
 export modelDR
 export trajectory
 include("modelD.jl")
+
+export bootstrap_band, slice
+include("bootstrap.jl")
+
 
 end  # module DoubleRegge
