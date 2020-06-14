@@ -4,8 +4,9 @@ using DrWatson
 using DoubleRegge
 using QuadGK
 using Plots
-using Cuba # HCubature
+using Cuba # HCubature # NIntegration
 using Optim
+using DelimitedFiles
 theme(:wong; size=(500,350))
 #
 #
@@ -54,10 +55,19 @@ end
 #
 @time χ2(0.3,0.2,[1,1.1,1e-3]) # test
 #
-integrate_dcosθdϕ(g) = cuhre((x,f)->f[1]=g(x),2,1).integral[1]
+
+# QuadGK
 # integrate_dcosθdϕ(g) = quadgk(x->g([x,1/2+1/8]),0,1)[1]
+#
+# Cuba
+integrate_dcosθdϕ(g) = cuhre((x,f)->f[1]=g(x),2,1).integral[1]
+#
+# HCubature
 # integrate_dcosθdϕ(g) =  hcubature(g, [0.0, 0.0], [1.0, 1.0])[1]
 χ2(pars) = integrate_dcosθdϕ(x->χ2(2x[1]-1, π*(2x[2]-1),pars))*(4π)
+#
+# third method NIntegration
+# χ2(pars) = nintegrate((cosθ,ϕ,z)->χ2(cosθ,ϕ,pars), (-1.0, -π, 0.0), (1.0, π, 1.0))[1]
 #
 @time χ2([1,1.1,1e-3]) # test
 # @time ForwardDiff.gradient(χ2, [1,1.1,1e-3])
