@@ -6,6 +6,9 @@ using QuadGK
 using PartialWaveFunctions
 using GSL
 using Statistics
+using UpROOT
+using StaticArrays
+using LinearAlgebra
 
 export arg, Psi
 export LMs
@@ -16,7 +19,6 @@ include("dataIO.jl")
 
 export broadcast_over_tree
 export invmasssq, invariants, λ
-export cosθη_of_s1t1, ϕTY
 include("roottrees.jl")
 
 export recamp, constructamps
@@ -24,6 +26,7 @@ export dNdϕ, dNdcosθ
 include("reconstruction.jl")
 
 export modelS
+export cosθ1, ϕTY
 include("kinematics.jl")
 include("masses.jl")
 include("modelS.jl")

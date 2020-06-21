@@ -14,6 +14,13 @@ function cosθ2(vars)
     return - (2*s1*(s1-s-t2+mp2)+(s1-t2+mπ2)*(s-s1-mp2)) / sqrt( λ(s,s1,mp2) * λ(t2,s1,mπ2) )
 end
 #
+function cosθ1(vars)
+    @unpack s1, t1, t2 = vars
+    mb = mπ;
+    return (2s1*(t1-mπ2-mη2)+(s1-t2+mb^2)*(s1+mη2-mπ2)) / sqrt(λ(s1,t2,mb^2)*λ(s1,mη2,mπ2))
+end
+
+#
 function sπp(vars)
     @unpack s, s1, cosθ, ϕ, t2 = vars
     sinθ = sqrt(1-cosθ^2)

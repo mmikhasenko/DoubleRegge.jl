@@ -17,6 +17,16 @@ const amplitudes = constructamps(
     slice(data, :phase, 1:Nbins)
 );
 
+let Npoints = 100
+    main_point = Matrix{Float64}(undef,Nbins,Npoints)
+    cosθv = range(-1,1, length=Npoints)
+    for bin in 1:Nbins
+        calv = dNdcosθ.(cosθv; amps=slice(amplitudes, bin))
+        main_point[bin,:] .= calv
+    end
+    writedlm(datadir("exp_pro","main_point.txt"), main_point)
+end
+
 @time bootstrap_band(10, data)
 
 let Npoints = 100, Nsamples=1000
