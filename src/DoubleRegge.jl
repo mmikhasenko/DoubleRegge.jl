@@ -25,6 +25,9 @@ export recamp, constructamps
 export dNdϕ, dNdcosθ
 include("reconstruction.jl")
 
+export phi_asymmetry
+include("observables.jl")
+
 export modelS
 export cosθ1, ϕTY
 include("kinematics.jl")
