@@ -2,6 +2,7 @@ name = "DoubleRegge"
 authors = ["mmikhasenko"]
 
 [deps]
+Cuba = "8a292aeb-7a57-582c-b821-06e4c11590b1"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
 GSL = "92c85e6c-cbff-5e0c-80f7-495c94daaecd"

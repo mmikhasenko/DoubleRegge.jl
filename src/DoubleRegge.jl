@@ -9,6 +9,7 @@ using Statistics
 using UpROOT
 using StaticArrays
 using LinearAlgebra
+using Cuba
 
 export arg, Psi
 export LMs
@@ -25,7 +26,7 @@ export recamp, constructamps
 export dNdϕ, dNdcosθ
 include("reconstruction.jl")
 
-export phi_asymmetry
+export phi_asymmetry, phi_asymmetry_2d
 include("observables.jl")
 
 export modelS
