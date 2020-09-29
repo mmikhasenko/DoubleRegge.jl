@@ -11,6 +11,17 @@ using StaticArrays
 using LinearAlgebra
 using Cuba
 
+export TwoParticleDiffraction
+export setsystem!
+include("masses.jl")
+
+export G
+
+export modelS
+export cosθ1, ϕTY
+include("kinematics.jl")
+include("modelS.jl")
+
 export arg, Psi
 export LMs
 include("LMbasis.jl")
@@ -28,12 +39,6 @@ include("reconstruction.jl")
 
 export phi_asymmetry, phi_asymmetry_2d
 include("observables.jl")
-
-export modelS
-export cosθ1, ϕTY
-include("kinematics.jl")
-include("masses.jl")
-include("modelS.jl")
 
 export α_a2, α_f2, α_ℙ
 export modelDR

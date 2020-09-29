@@ -36,7 +36,7 @@ invariants(pb,pr,pπ,pη) =
      t2 = invmasssq(pb-pη-pπ))
 
 # λ(x,y,z) = x^2+y^2+z^2-2x*y-2y*z-2z*x
-function cosθη_of_s1t1(vars; m1 = mη, m2 = mπ)
+function cosθη_of_s1t1(vars; m1, m2)
     @unpack s1, t1, t2 = vars
     return (2s1*(t1-m2^2-m1^2)+(s1-t2+mb^2)*(s1+m1^2-m2^2)) / sqrt(λ(s1,t2,mb^2)*λ(s1,m1^2,m2^2))
 end

@@ -3,7 +3,60 @@
 # const mp = 0.938;   const mp2 = mp^2;
 # const s0 = 19^2;
 
-const mπ = 0.13957018; const mπ2 = mπ^2;
-const mη = 0.54751; const mη2 = mη^2;
-const mp = 0.93827203;   const mp2 = mp^2;
-const s0 = DoubleRegge.mp2 + 2*DoubleRegge.mp*190;
+# const mπ = 0.13957018; const mπ2 = mπ^2;
+# const mη = 0.54751; const mη2 = mη^2;
+# const mp = 0.93827203;   const mp2 = mp^2;
+# const s0 = DoubleRegge.mp2 + 2*DoubleRegge.mp*190;
+
+
+@with_kw struct TwoParticleDiffraction
+    mb::Float64 = -1.0
+    mt::Float64 = -1.0
+    mr::Float64 = -1.0
+    m1::Float64 = -1.0
+    m2::Float64 = -1.0
+end
+
+const compass_ηπ  = let
+    mπ = 0.13957018; mπ2 = mπ^2;
+    mη = 0.54751; mη2 = mη^2;
+    mp = 0.93827203;   mp2 = mp^2;
+    TwoParticleDiffraction(mb = mπ, mt=mp, mr=mp, m1=mη, m2=mπ)
+end
+# const compass_η′π = TwoParticleDiffraction(mb = mπ, mt=mp, mr=pm, m1=mη′, m2=mπ)
+
+mutable struct setup
+    system::TwoParticleDiffraction
+    s0::Float64
+end
+
+const G = setup(TwoParticleDiffraction(), 0.0)
+
+setsystem!(tpd::TwoParticleDiffraction, s0::T where T<:Real) = (G.system = tpd; G.s0 = s0)
+# 
+function setsystem!(s::Symbol)
+    s == :compass_ηπ  && setsystem!(compass_ηπ, 0.93827203^2 + 2*0.93827203*190)
+    # s == :compass_η′π && setsystem!(compass_η′π, 0.93827203^2 + 2*0.93827203*190)
+end
+
+#    _|_|_|  _|    _|    _|_|_|    _|_|_|  _|  _|_|  
+#  _|_|      _|    _|  _|    _|  _|    _|  _|_|      
+#      _|_|  _|    _|  _|    _|  _|    _|  _|        
+#  _|_|_|      _|_|_|    _|_|_|    _|_|_|  _|        
+#                            _|                      
+#                        _|_|                        
+
+struct TwoParticleDiffraction²
+    mb²::Float64
+    mt²::Float64
+    mr²::Float64
+    m1²::Float64
+    m2²::Float64
+end
+
+import Base: ^
+function ^(tpd::TwoParticleDiffraction, k)
+    (k!=2) && error("only ^2 is defined")
+    @unpack mb, mt, mr, m1, m2 = tpd
+    return TwoParticleDiffraction²(mb^2, mt^2, mr^2, m1^2, m2^2)
+end
