@@ -2,14 +2,6 @@
 recamp(cosθ,ϕ,amps,LMs) =
     sum(a*Psi(L,M,cosθ,ϕ) for
     (a, (L, M)) in zip(amps,LMs))
-
-"""
-    constructamps(intensities, phases)
-
-Important: the phases are expected in degrees.
-"""
-constructamps(intensities, phases) = [@. sqrt(iv) * cis(ϕv/180*π)
-    for (iv, ϕv) in zip(intensities, phases)];
 #
 function dNdcosθ(cosθ; amps, LMs)
     list_of_all = collect(zip(amps,LMs))
