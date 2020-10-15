@@ -43,7 +43,7 @@ include("observables.jl")
 export α_a2, α_f2, α_ℙ
 export modelDR
 export trajectory
-export sixexchage, sixexchagesmodel
+export sixexchages
 include("modelD.jl")
 
 export bootstrap_band, slice

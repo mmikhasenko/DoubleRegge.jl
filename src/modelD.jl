@@ -49,16 +49,19 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
     return prefactor*vertex
 end
 
-const sixexchage =
+function build_model(exchanges, s0, t2)
+    function model(m,cosθ,ϕ; pars)
+        vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
+        return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3])
+            for (p,t) in zip(pars, sixexchage))
+    end
+    model
+end
+
+const sixexchages =
     [(α_a2, α_ℙ,  true , "a2/ℙ" ),
      (α_a2, α_f2, true , "a2/f2"),
      (α_f2, α_ℙ,  false, "f2/ℙ" ),
      (α_f2, α_f2, false, "f2/f2"),
      (α_ℙ,  α_ℙ,  false, "ℙ/ℙ"  ),
      (α_ℙ,  α_f2, false, "ℙ/f2" )];
-
-function sixexchagesmodel(m,cosθ,ϕ; pars)
-    vars = (s = G.s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = -0.2)
-    return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3])
-        for (p,t) in zip(pars, sixexchage))
-end
