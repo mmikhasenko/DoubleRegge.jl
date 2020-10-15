@@ -15,3 +15,5 @@ function dNdcosθ(cosθ; amps, LMs)
 end
 #
 dNdϕ(ϕ; amps, cosθlims::Tuple{Real,Real}=(-1,1), LMs) = quadgk(cosθ->abs2(recamp(cosθ,ϕ,amps,LMs)), cosθlims...)[1]
+
+integrate_dcosθdϕ(g) = cuhre((x,f)->f[1]=g(x),2,1)[1][1]*(4π)

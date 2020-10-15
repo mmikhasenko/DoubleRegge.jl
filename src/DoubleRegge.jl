@@ -34,6 +34,7 @@ include("roottrees.jl")
 
 export recamp, constructamps
 export dNdϕ, dNdcosθ
+export integrate_dcosθdϕ
 include("reconstruction.jl")
 
 export phi_asymmetry, phi_asymmetry_2d
