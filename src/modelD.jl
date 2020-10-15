@@ -53,9 +53,9 @@ function build_model(exchanges, s0, t2)
     function model(m,cosθ,ϕ; pars)
         vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
         return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3])
-            for (p,t) in zip(pars, sixexchage))
+            for (p,t) in zip(pars, exchanges))
     end
-    model
+    return model
 end
 
 const sixexchages =
