@@ -1,5 +1,5 @@
 
-recamp(cosθ,ϕ,amps) =
+recamp(cosθ,ϕ,amps,LMs) =
     sum(a*Psi(L,M,cosθ,ϕ) for
     (a, (L, M)) in zip(amps,LMs))
 
@@ -11,8 +11,7 @@ Important: the phases are expected in degrees.
 constructamps(intensities, phases) = [@. sqrt(iv) * cis(ϕv/180*π)
     for (iv, ϕv) in zip(intensities, phases)];
 #
-#
-function dNdcosθ(cosθ; amps=amps)
+function dNdcosθ(cosθ; amps, LMs)
     list_of_all = collect(zip(amps,LMs))
     # M=1
     l1 = filter(x->x[2].M==1, list_of_all)
@@ -23,4 +22,4 @@ function dNdcosθ(cosθ; amps=amps)
     return v
 end
 #
-dNdϕ(ϕ; amps=amps, cosθlims::Tuple{Real,Real}=(-1,1)) = quadgk(cosθ->abs2(recamp(cosθ,ϕ,amps)), cosθlims...)[1]
+dNdϕ(ϕ; amps, cosθlims::Tuple{Real,Real}=(-1,1), LMs) = quadgk(cosθ->abs2(recamp(cosθ,ϕ,amps,LMs)), cosθlims...)[1]
