@@ -2,66 +2,79 @@ using DrWatson
 @quickactivate "DoubleRegge"
 
 using DoubleRegge
-using QuadGK
 using Plots
-using Cuba
-using Optim
 theme(:wong; size=(500,350))
+
+using QuadGK
+using Cuba
+# 
+using Optim
+using TypedTables
 #
 #
-#
+
+
+inlims(x,lims) = lims[1] ≤ x ≤ lims[2]
+
+
+settings = Dict(
+    "system" => :compass_ηπ,
+    "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+    "system" => :compass_ηπ,
+    "fitrange" => (2.5, 3.0),
+    "t2" => -0.2,
+    "tag" => "bottom-Po",
+    "exchanges" => [1,3,5],
+    "initial_pars" => [0.7, -0.7, 0.0 ],
+    "scale_α" => 0.9,
+)
+
+setsystem!(settings["system"])
+
 # data
-const data = [(inten = get_intesity(L,M),
-         phase = get_phase(L,M)) for (L,M) in LMs];
-const xdata = data[1].inten[:,1];
-const Nbins = length(xdata)
-#
-slice(data, property, bin; ind=2) = [v[bin, ind] for v in getproperty.(data, property)]
-slice(data, bin) = getindex.(data, bin)
-#
-const amplitudes = constructamps(
-    slice(data, :inten, 1:Nbins),
-    slice(data, :phase, 1:Nbins)
-);
+
+
+LMs = compass_ηπ_LMs
+data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
+amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
 
 # range
-fit_range = (2.3, 3.0)
-filt_fr = fit_range[1] .< xdata .< fit_range[2]
-const amplitudes_fr = map(as->as[filt_fr], amplitudes)
-const xdata_fr = xdata[filt_fr];
+fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
+fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
-model(mηπ,cosθ,ϕ; pars) = pars[1]*modelS(pars[2:end],
-    (s = DoubleRegge.s0, s1 = mηπ^2,
-        cosθ = cosθ, ϕ = ϕ,
-        t2 = -0.45))
-#
-function χ2(cosθ,ϕ,c)
-    Id = abs2.(recamp(cosθ,ϕ, amplitudes_fr))
-    Am = model.(xdata_fr,cosθ,ϕ; pars=c)
-    Im = abs2.(Am)
-    return sum(abs2, Id - Im)
+exchanges = sixexchages[settings["exchanges"]]
+model = build_model(exchanges, G.s0, settings["t2"], settings["scale_α"])
+intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars=pars))*q(m)
+
+function integrand(cosθ,ϕ,pars)
+    Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps, Ref(LMs)))
+    Am = model.(fitdata.x, cosθ, ϕ; pars=pars)
+    Im = abs2.(Am) .* q.(fitdata.x)
+    return sum(Im .- Id .* log.(Im))
 end
+
+ellh(pars) = integrate_dcosθdϕ(x->integrand(2x[1]-1,0.3+π*(2x[2]-1),pars))
 #
-# @time χ2(0.3,0.2,[1,1.1]) # test
+@time ellh([1.0,0,0])
+# [ 0.62, -0.8, +0.0057]
+ft = Optim.optimize(ellh, settings["initial_pars"], BFGS(),
+               Optim.Options(show_trace = true))
 #
-integrate_dcosθdϕ(g) = cuhre((x,f)->f[1]=g(x),2,1)[1][1]*(4π)
-χ2(pars) = integrate_dcosθdϕ(x->χ2(2x[1]-1,π*(2x[1]-1),pars))
-#
-# @time χ2([1,1.1]) # test
-#
-ft = Optim.minimizer(Optim.optimize(χ2, [1.1e-3,1.1], BFGS(),
-               Optim.Options(show_trace = true)))
-#
-# @time quadgk(ϕ->model(xdata_fr[1], 0.2,ϕ; pars=ft), -π, π)[1] # test
-# plotting
+ft.minimizer
+
+ft.status
+
+# 0.8: [0.5658807102768846, -0.7473538045573105, 0.00403669556892034]
+
 let
     cosθv = range(-1,1, length=101)
-    ps = [let
-        calv = dNdcosθ.(cosθv; amps=slice(amplitudes_fr, bin))
+    function make_plot(bin)
+        calv = dNdcosθ.(cosθv; amps=fitdata.amps[bin], LMs=LMs)
         plot(cosθv, calv, lab="")
-        calv = [quadgk(ϕ->abs2(model(xdata_fr[bin], cosθ, ϕ; pars=ft)),-π, π)[1] for cosθ in cosθv]
-        plot!(cosθv, calv, lab="")
-    end for bin in 1:length(xdata_fr)]
-    plot(ps..., size=(1500,1000))
+        projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ; pars=ft.minimizer), -π, π)[1]
+        plot!(cosθv, projection.(cosθv), lab="")
+    end
+    ps = make_plot.(1:length(fitdata.x))
+    plot(ps..., size=(1000,600))
 end
