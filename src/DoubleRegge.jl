@@ -13,9 +13,8 @@ using Cuba
 
 export TwoParticleDiffraction
 export setsystem!
-include("masses.jl")
-
 export G
+include("masses.jl")
 
 export modelS
 export cosθ1, ϕTY
@@ -26,7 +25,7 @@ export arg, Psi
 export LMs
 include("LMbasis.jl")
 
-export get_intesity, get_phase
+export x_IδI_ϕδϕ_compass_ηπ
 include("dataIO.jl")
 
 export broadcast_over_tree
