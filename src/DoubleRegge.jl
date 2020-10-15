@@ -50,5 +50,7 @@ include("modelD.jl")
 export bootstrap_band, slice
 include("bootstrap.jl")
 
+export inlims
+include("utils.jl")
 
 end  # module DoubleRegge
