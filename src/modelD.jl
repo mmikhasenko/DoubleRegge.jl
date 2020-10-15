@@ -4,7 +4,7 @@ V(x,y,η) = sf_gamma(x-y) / sf_gamma(1-y) * hypergeom(1-x,1-x+y,-1/η)
 ξ(τ,α) = (τ + cis(-π*α))/2
 ξ(τ1,τ2,α1,α2) = (τ1*τ2 + cis(-π*(α1-α2)))/2
 
-const α′ = 0.8;
+const α′ = 0.9;
 
 # trajectories
 struct trajectory
@@ -49,10 +49,10 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
     return prefactor*vertex
 end
 
-function build_model(exchanges, s0, t2)
+function build_model(exchanges, s0, t2, scale_α=α′)
     function model(m,cosθ,ϕ; pars)
         vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
-        return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3])
+        return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3], α′s=(scale_α,scale_α,scale_α))
             for (p,t) in zip(pars, exchanges))
     end
     return model

@@ -24,8 +24,8 @@ function x_IδI_ϕδϕ_compass_ηπ(pathtodata)
     #
     Idata  = reshape_compass_format((L,M)->get_intesity(L,M)[:,2], compass_ηπ_LMs)
     δIdata = reshape_compass_format((L,M)->get_intesity(L,M)[:,3], compass_ηπ_LMs)
-    ϕdata  = reshape_compass_format((L,M)->get_phase(L,M)[:,2], compass_ηπ_LMs)
-    δϕdata = reshape_compass_format((L,M)->get_phase(L,M)[:,3], compass_ηπ_LMs)
+    ϕdata  = reshape_compass_format((L,M)->get_phase(L,M)[:,2] ./ 180 .* π, compass_ηπ_LMs)
+    δϕdata = reshape_compass_format((L,M)->get_phase(L,M)[:,3] ./ 180 .* π, compass_ηπ_LMs)
     #
     NamedTuple{(:x, :I, :δI, :ϕ, :δϕ)}.(zip(xdata,Idata,δIdata,ϕdata,δϕdata))
 end
