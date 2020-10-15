@@ -1,7 +1,6 @@
 using DrWatson
 @quickactivate "DoubleRegge"
 
-using DoubleRegge
 using Plots
 theme(:wong; size=(500,350))
 
@@ -11,17 +10,18 @@ using Cuba
 using Optim
 using TypedTables
 #
-#
+using TOML
 
+# 
+using DoubleRegge
+setsystem!(Symbol(settings["system"]))
 
-inlims(x,lims) = lims[1] ≤ x ≤ lims[2]
 
 
 settings = Dict(
-    "system" => :compass_ηπ,
+    "system" => "compass_ηπ",
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
-    "system" => :compass_ηπ,
-    "fitrange" => (2.5, 3.0),
+    "fitrange" => [2.5, 3.0],
     "t2" => -0.2,
     "tag" => "bottom-Po",
     "exchanges" => [1,3,5],
@@ -29,11 +29,8 @@ settings = Dict(
     "scale_α" => 0.9,
 )
 
-setsystem!(settings["system"])
 
 # data
-
-
 LMs = compass_ηπ_LMs
 data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
 amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
@@ -61,20 +58,29 @@ ellh(pars) = integrate_dcosθdϕ(x->integrand(2x[1]-1,0.3+π*(2x[2]-1),pars))
 ft = Optim.optimize(ellh, settings["initial_pars"], BFGS(),
                Optim.Options(show_trace = true))
 #
-ft.minimizer
+fit_results = Dict(
+    "fit_converged" => ft.x_converged,
+    "fit_minimizer" => ft.minimizer,
+    "fit_minimum" => ft.minimum)
 
-ft.status
+output_name = joinpath("data", "exp_pro","fit-results_$(settings["tag"])_Np=$(length(settings["exchanges"]))");
+
+open(output_name,"w") do io
+    TOML.print(io, Dict(
+            "settings"=>settings,
+            "fit_results"=>fit_results))
+end
 
 # 0.8: [0.5658807102768846, -0.7473538045573105, 0.00403669556892034]
 
-let
-    cosθv = range(-1,1, length=101)
-    function make_plot(bin)
-        calv = dNdcosθ.(cosθv; amps=fitdata.amps[bin], LMs=LMs)
-        plot(cosθv, calv, lab="")
-        projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ; pars=ft.minimizer), -π, π)[1]
-        plot!(cosθv, projection.(cosθv), lab="")
-    end
-    ps = make_plot.(1:length(fitdata.x))
-    plot(ps..., size=(1000,600))
-end
+# let
+#     cosθv = range(-1,1, length=101)
+#     function make_plot(bin)
+#         calv = dNdcosθ.(cosθv; amps=fitdata.amps[bin], LMs=LMs)
+#         plot(cosθv, calv, lab="")
+#         projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ; pars=ft.minimizer), -π, π)[1]
+#         plot!(cosθv, projection.(cosθv), lab="")
+#     end
+#     ps = make_plot.(1:length(fitdata.x))
+#     plot(ps..., size=(1000,600))
+# end
