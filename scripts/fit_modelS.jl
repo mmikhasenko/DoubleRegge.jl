@@ -16,8 +16,7 @@ using TOML
 using DoubleRegge
 setsystem!(Symbol(settings["system"]))
 
-
-
+# bottom-Po model
 settings = Dict(
     "system" => "compass_ηπ",
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
@@ -29,6 +28,17 @@ settings = Dict(
     "scale_α" => 0.9,
 )
 
+# current cesar model
+settings = Dict(
+    "system" => "compass_ηπ",
+    "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+    "fitrange" => [2.5, 3.0],
+    "t2" => -0.2,
+    "tag" => "a2Po-f2f2-PoPo",
+    "exchanges" => [1,4,5],
+    "initial_pars" => [0.7, 1.0, 0.0 ],
+    "scale_α" => 0.8,
+)
 
 # data
 LMs = compass_ηπ_LMs

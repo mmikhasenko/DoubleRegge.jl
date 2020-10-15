@@ -1,12 +1,29 @@
+
+bootstrap_*.txt
+main_points.txt
+
+data/exp_pro/plotang.fit.txt
+data/exp_pro/main_point.txt
+plots/dimas_toys_etapi_costheta.pdf
+plots/f2+a2.pdf
+plots/f2+a2+P_p1.pdf
+plots/f2+a2+P.pdf
+plots/for_back_ward.pdf
+plots/forward_backward_intensity.pdf
+plots/forward_backward_slopes.pdf
+plots/image*.png
+plots/t2_dependence.pdf
+scripts/fit_modelS.jl
+scripts/project_model.jl
+
 ################################################################################
 #                          DrWatson Project Structure                          #
 ################################################################################
 
 # Folders to ignore - files may be too large, too many, etc. NOTE: EDIT IF NEEDED.
-data
+data/sims
+data/exp_raw
 videos
-plots
-notebooks
 _research
 
 ################################################################################
