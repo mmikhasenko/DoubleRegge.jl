@@ -1,5 +1,7 @@
 name = "DoubleRegge"
-authors = ["mmikhasenko"]
+uuid = "f838507a-7273-4d1c-8b9b-41446bbb5741"
+authors = ["Misha Mikhasenko <mikhail.mikhasenko@gmail.com>"]
+version = "0.1.0"
 
 [deps]
 Cuba = "8a292aeb-7a57-582c-b821-06e4c11590b1"
