@@ -29,3 +29,11 @@ function x_IδI_ϕδϕ_compass_ηπ(pathtodata)
     #
     NamedTuple{(:x, :I, :δI, :ϕ, :δϕ)}.(zip(xdata,Idata,δIdata,ϕdata,δϕdata))
 end
+
+
+function randA(data)
+    randI = [abs.(I .+ randn(length(δI)) .* δI) for (I, δI) in zip(data.I, data.δI)]
+    randϕ = [abs.(ϕ .+ randn(length(δϕ)) .* δϕ) for (ϕ, δϕ) in zip(data.ϕ, data.δϕ)]
+    randA = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(randI,randϕ)]
+    return randA
+end

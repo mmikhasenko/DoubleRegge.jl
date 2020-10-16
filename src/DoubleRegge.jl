@@ -27,6 +27,7 @@ export pw_project
 include("LMbasis.jl")
 
 export x_IδI_ϕδϕ_compass_ηπ
+export randA
 include("dataIO.jl")
 
 export broadcast_over_tree

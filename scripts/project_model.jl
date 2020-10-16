@@ -12,21 +12,6 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 using DoubleRegge
 setsystem!(:compass_ηπ)
 
-#  _|_|_|  _|_|      _|_|    _|      _|    _|_|    
-#  _|    _|    _|  _|    _|  _|      _|  _|_|_|_|  
-#  _|    _|    _|  _|    _|    _|  _|    _|        
-#  _|    _|    _|    _|_|        _|        _|_|_|  
-
-
-function randA(data)
-    randI = [abs.(I .+ randn(length(δI)) .* δI) for (I, δI) in zip(data.I, data.δI)]
-    randϕ = [abs.(ϕ .+ randn(length(δϕ)) .* δϕ) for (ϕ, δϕ) in zip(data.ϕ, data.δϕ)]
-    randA = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(randI,randϕ)]
-    return randA
-end
-# 
-
-
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
 #  _|        _|    _|  _|    _|  _|_|_|_|  
@@ -171,3 +156,4 @@ savefig(
     joinpath("data", "exp_pro",
         "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
 #
+
