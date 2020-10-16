@@ -84,14 +84,14 @@ end
 
 # 0.8: [0.5658807102768846, -0.7473538045573105, 0.00403669556892034]
 # 0.8: [-0.623419, -11.3355, 0.00794382]
-let
-    cosθv = range(-1,1, length=101)
-    function make_plot(bin)
-        calv = dNdcosθ.(cosθv; amps=fitdata.amps[bin], LMs=LMs)
-        plot(cosθv, calv, lab="")
-        projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ; pars=ft.minimizer), -π, π)[1]
-        plot!(cosθv, projection.(cosθv), lab="")
-    end
-    ps = make_plot.(1:length(fitdata.x))
-    plot(ps..., size=(1000,600))
-end
+# let
+#     cosθv = range(-1,1, length=101)
+#     function make_plot(bin)
+#         calv = dNdcosθ.(cosθv; amps=fitdata.amps[bin], LMs=LMs)
+#         plot(cosθv, calv, lab="")
+#         projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ; pars=ft.minimizer), -π, π)[1]
+#         plot!(cosθv, projection.(cosθv), lab="")
+#     end
+#     ps = make_plot.(1:length(fitdata.x))
+#     plot(ps..., size=(1000,600))
+# end
