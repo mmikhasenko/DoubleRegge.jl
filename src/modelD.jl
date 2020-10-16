@@ -49,7 +49,7 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
     return prefactor*vertex
 end
 
-function build_model(exchanges, s0, t2, scale_α=α′)
+function build_model(exchanges, t2, scale_α=α′, s0=G.s0)
     function model(m,cosθ,ϕ; pars)
         vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
         return sum(p*modelDR(t[1], t[2], vars; η_forward=t[3], α′s=(scale_α,scale_α,scale_α))
