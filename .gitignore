@@ -13,8 +13,6 @@ plots/forward_backward_intensity.pdf
 plots/forward_backward_slopes.pdf
 plots/image*.png
 plots/t2_dependence.pdf
-scripts/fit_modelS.jl
-scripts/project_model.jl
 
 ################################################################################
 #                          DrWatson Project Structure                          #
