@@ -14,7 +14,6 @@ using TOML
 
 # 
 using DoubleRegge
-setsystem!(Symbol(settings["system"]))
 
 # bottom-Po model
 settings = Dict(
@@ -39,6 +38,8 @@ settings = Dict(
     "initial_pars" => [0.7, 1.0, 0.0 ],
     "scale_α" => 0.8,
 )
+
+setsystem!(Symbol(settings["system"]))
 
 # data
 LMs = compass_ηπ_LMs

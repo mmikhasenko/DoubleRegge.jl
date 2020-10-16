@@ -23,6 +23,7 @@ include("modelS.jl")
 
 export arg, Psi
 export compass_ηπ_LMs
+export pw_project
 include("LMbasis.jl")
 
 export x_IδI_ϕδϕ_compass_ηπ
