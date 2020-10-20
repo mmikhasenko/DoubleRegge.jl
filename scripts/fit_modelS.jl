@@ -42,7 +42,7 @@ settings = Dict(
 setsystem!(Symbol(settings["system"]))
 
 # data
-LMs = compass_ηπ_LMs
+const LMs = compass_ηπ_LMs
 data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
 amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
 
@@ -51,8 +51,8 @@ fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
-exchanges = sixexchages[settings["exchanges"]]
-model = build_model(exchanges, G.s0, settings["t2"], settings["scale_α"])
+const exchanges = sixexchages[settings["exchanges"]]
+const model = build_model(exchanges, G.s0, settings["t2"], settings["scale_α"])
 intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars=pars))*q(m)
 
 function integrand(cosθ,ϕ,pars)

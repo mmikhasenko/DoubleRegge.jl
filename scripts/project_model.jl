@@ -24,17 +24,16 @@ settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml
 # 
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
-fit_results = parsed["fit_results"]
+const fit_results = parsed["fit_results"]
 
 # 
 setsystem!(Symbol(settings["system"]))
 
 # fit
-exchanges = sixexchages[settings["exchanges"]]
-model = build_model(exchanges, settings["t2"], settings["scale_α"])
+const exchanges = sixexchages[settings["exchanges"]]
+const model = build_model(exchanges, settings["t2"], settings["scale_α"])
 fixed_model(m,cosθ,ϕ; pars=fit_results["fit_minimizer"]) = model(m,cosθ,ϕ; pars=pars)
 intensity(m, cosθ, ϕ; pars=fit_results["fit_minimizer"]) = abs2(fixed_model(m, cosθ, ϕ; pars=pars))*q(m)
-
 
 # data
 LMs = compass_ηπ_LMs
