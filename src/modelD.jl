@@ -1,5 +1,5 @@
 
-V(x,y,η) = sf_gamma(x-y) / sf_gamma(1-y) * hypergeom(1-x,1-x+y,-1/η)
+V(x,y,η) = gamma(x-y) / gamma(1-y) * hypergeom(1-x,1-x+y,-1/η) #pFq([1-x],[1-x+y],-1/η) #
 
 ξ(τ,α) = (τ + cis(-π*α))/2
 ξ(τ1,τ2,α1,α2) = (τ1*τ2 + cis(-π*(α1-α2)))/2
@@ -7,9 +7,9 @@ V(x,y,η) = sf_gamma(x-y) / sf_gamma(1-y) * hypergeom(1-x,1-x+y,-1/η)
 const α′ = 0.9;
 
 # trajectories
-struct trajectory
-    slope::Real
-    intercept::Real
+struct trajectory{T}
+    slope::T
+    intercept::T
 end
 (α::trajectory)(t) = α.intercept + α.slope*t
 #

@@ -10,6 +10,7 @@ using UpROOT
 using StaticArrays
 using LinearAlgebra
 using Cuba
+using SpecialFunctions
 
 export TwoParticleDiffraction
 export setsystem!
