@@ -16,10 +16,10 @@ end
 #
 dNdϕ(ϕ; amps, cosθlims::Tuple{Real,Real}=(-1,1), LMs) = quadgk(cosθ->abs2(recamp(cosθ,ϕ,amps,LMs)), cosθlims...)[1]
 
-function integrate_dcosθdϕ(g, cosθlims=(-1,1), ϕlims=(-π,π))
-    integration = cuhre((x,f)->f[1]=g(
+function integrate_dcosθdϕ(g, cosθlims=(-1,1), ϕlims=(-π+0.31,π+0.31); dims::Int=1)
+    integration = cuhre((x,f)->f[:] .= g(
         cosθlims[1]+x[1]*(cosθlims[2]-cosθlims[1]),
-           ϕlims[1]+x[2]*(   ϕlims[2]-   ϕlims[1])),2,1)
-    return integration[1][1]*(cosθlims[2]-cosθlims[1])*(ϕlims[2]-ϕlims[1])
+           ϕlims[1]+x[2]*(   ϕlims[2]-   ϕlims[1])),2, dims)
+    return integration[1] .* ((cosθlims[2]-cosθlims[1])*(ϕlims[2]-ϕlims[1]))
 end
 
