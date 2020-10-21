@@ -22,7 +22,7 @@ export cosθ1, ϕTY
 include("kinematics.jl")
 include("modelS.jl")
 
-export arg, Psi
+export arg, iϕ, Psi
 export compass_ηπ_LMs
 export pw_project
 include("LMbasis.jl")
