@@ -51,8 +51,8 @@ end
 #  _|        _|    _|  _|    _|  _|        
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
-settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-# settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
+# settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
+settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
 ! isfile(settings_file) && error("no file")
 
 # 
@@ -63,8 +63,6 @@ fit_results = parsed["fit_results"]
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const t2 = settings["t2"]
-const α = settings["scale_α"]
 const model = build_model(exchanges, settings["t2"], settings["scale_α"])
 const fixed_pars = fit_results["fit_minimizer"]
 fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
