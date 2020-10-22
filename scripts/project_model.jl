@@ -167,12 +167,19 @@ fHeigher = (intensity_in_bins .- sum.(pw_intensities)) ./ intensity_in_bins
 filtodd = isodd.(getproperty.(LMs,:L))
 fOdd = map(x->sum(x .* filtodd), pw_intensities) ./ intensity_in_bins
 fEven = map(x->sum(x .* iszero.(filtodd)), pw_intensities) ./ intensity_in_bins
+# 
+fOdd_compass = map(x->sum(x .* filtodd), plotdata.I) ./ sum.(plotdata.I)
+fEven_compass = map(x->sum(x .* iszero.(filtodd)), plotdata.I) ./ sum.(plotdata.I)
+
 let
     plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=settings["tag"])
-    plot!(plotdata.x, fOdd, lab="Odd waves L ≤ 6")
-    plot!(plotdata.x, fEven, lab="Even waves L ≤ 6")
-    plot!(plotdata.x, fHeigher, lab="Higher waves L > 6")
-    plot!(ylims=(0,1))
+    plot!(plotdata.x, fHeigher, lab="Higher waves L > 6", lw=2)
+    plot!(plotdata.x, fEven, lab="Even waves L ≤ 6", lw=2)
+    plot!(plotdata.x, fOdd, lab="Odd waves L ≤ 6", lw=2)
+    scatter!(plotdata.x, xerr=(plotdata.x[2]-plotdata.x[1])/2, fEven_compass, lab="", mc=2, ms=3)
+    scatter!(plotdata.x, xerr=(plotdata.x[2]-plotdata.x[1])/2, fOdd_compass, lab="", mc=3, ms=3)
+    plot!(ylims=(0,1), leg=:left)
+    vspan!(fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
 savefig(
     joinpath("data", "exp_pro",
