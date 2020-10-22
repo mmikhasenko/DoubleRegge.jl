@@ -11,6 +11,9 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 # 
 using DoubleRegge
 setsystem!(:compass_ηπ)
+# 
+using Statistics
+using LinearAlgebra
 
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
@@ -25,6 +28,7 @@ settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
 const fit_results = parsed["fit_results"]
+const pfr = fit_results["fit_minimizer"]
 
 # 
 setsystem!(Symbol(settings["system"]))
@@ -32,11 +36,22 @@ setsystem!(Symbol(settings["system"]))
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
 const model = build_model(exchanges, settings["t2"], settings["scale_α"])
-fixed_model(m,cosθ,ϕ; pars=fit_results["fit_minimizer"]) = model(m,cosθ,ϕ; pars=pars)
-intensity(m, cosθ, ϕ; pars=fit_results["fit_minimizer"]) = abs2(fixed_model(m, cosθ, ϕ; pars=pars))*q(m)
+fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
+fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
+intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))
+# 
+function pw_project_fixed(m::Float64,L,M)
+    amplitude(cosθ,ϕ) = fixed_model_sqrtq(m,cosθ,ϕ)
+    return pw_project(amplitude,L,M)
+end
+# 
+model_integral(m)          = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)))[1]*q(m)
+model_integral_forward(m)  = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(0,1))[1]*q(m)
+model_integral_backward(m) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(-1,0))[1]*q(m)
+
 
 # data
-LMs = compass_ηπ_LMs
+const LMs = compass_ηπ_LMs
 data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
 amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
 data = Table(data, amps=amplitudes)
@@ -47,15 +62,6 @@ fitdata = data[fitrangemap]
 plotmap = map(x->inlims(x.x, (2.4,3.0)), data)
 plotdata = data[plotmap]
 
-
-function pw_iϕ(m,L,M)
-    amplitude(cosθ,ϕ) = fixed_model(m,cosθ,ϕ)*sqrt(q(m))
-    return pw_project(amplitude,L,M)
-end
-#
-model_integral(m) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)))*q(m)
-model_integral_forward(m) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(0,1))*q(m)
-model_integral_backward(m) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(-1,0))*q(m)
 
 # ellh
 fit_results["fit_minimum"]
@@ -84,38 +90,36 @@ asymm_data = [asymmetry(f,b) for (f,b) in zip(data_forward_in_bins,data_backward
 asymm_model = [asymmetry(f,b) for (f,b) in zip(intensity_forward_in_bins, intensity_backward_in_bins)]
 # 
 let
-    plot(size=(900,700), layout=grid(2,2),
+    plot(size=(900,350), layout=grid(1,2),
         xlab="m(ηπ) (GeV)",
         ylab=["intensity" "(F-B) / (F+B)" "intensity" "intensity"],
-        title=["total" "asymmetry" "forward" "backward"])
+        title=["number of events" "asymmetry"])
     #
-    common_options = (xerr=(plotdata.x[2]-plotdata.x[1])/2, m=(3,:black))
+    common_options = (xerr=(plotdata.x[2]-plotdata.x[1])/2, m=(3,))
     # 
-    scatter!(sp=3, plotdata.x, data_forward_in_bins; lab="data",
-        common_options..., yerr = sqrt.(sum.(x->x^2, plotdata.δI)/2))
-    scatter!(sp=4, plotdata.x, data_backward_in_bins; lab=""   ,
-        common_options..., yerr = sqrt.(sum.(x->x^2, plotdata.δI)/2))
-    plot!(sp=3, plotdata.x, intensity_forward_in_bins, lab="model", lw=2)
-    plot!(sp=4, plotdata.x, intensity_backward_in_bins, lab="", lw=2)
+    scatter!(sp=1, plotdata.x, data_forward_in_bins; lab="forward",
+        common_options..., yerr = sqrt.(sum.(x->x^2, plotdata.δI)/2), seriescolor=3)
+    scatter!(sp=1, plotdata.x, data_backward_in_bins; lab="backward",
+        common_options..., yerr = sqrt.(sum.(x->x^2, plotdata.δI)/2), seriescolor=4)
+    plot!(sp=1, plotdata.x, intensity_forward_in_bins, lab="", lw=2, seriescolor=3)
+    plot!(sp=1, plotdata.x, intensity_backward_in_bins, lab="", lw=2, seriescolor=4)
     # 
     scatter!(sp=2, plotdata.x, asymm_data; lab="", common_options..., yerr=δasymm_data)
     plot!(sp=2, plotdata.x, asymm_model, lab="", ylim=(-1,1), lw=2)
     #
     scatter!(sp=1, plotdata.x, sum.(plotdata.I);
-        common_options..., lab="",
-        yerr = sqrt.(sum.(x->x^2, plotdata.δI)))
-    plot!(sp=1, plotdata.x, intensity_in_bins, lw=2, lab="")
+        common_options..., lab="intensity",
+        yerr = sqrt.(sum.(x->x^2, plotdata.δI)), seriescolor=2)
+    plot!(sp=1, plotdata.x, intensity_in_bins, lw=2, lab="", seriescolor=2)
     # 
     vspan!(sp=1, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
-    vspan!(sp=3, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
-    vspan!(sp=4, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
+savefig(
+    joinpath("data", "exp_pro",
+        "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
 
 # cosθ distributions
-using Statistics
-using LinearAlgebra
-
 let
     cosθv = range(-1,1, length=101)
     function make_plot(bin)
@@ -133,26 +137,43 @@ let
     ps = make_plot.(1:length(fitdata.x))
     plot(ps..., size=(900,600))
 end
-# savefig()
+savefig(
+    joinpath("data", "exp_pro",
+        "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
 
 
-# projections
-pw_projections = [pw_iϕ.(data.x[plotmap],L,M) for (L,M) in LMs]
+# # projections
+pw_projections = [map(LM->pw_project_fixed(m,LM...), LMs) for m in data.x[plotmap]]
+pw_intensities = map(x->abs2.(x), pw_projections)
 let
     plot(layout=grid(3,3), size=(900,900))
-    for (i,(m,(L,M))) in enumerate(zip(pw_projections,LMs))
+    for (i,(L,M)) in enumerate(LMs)
         scatter!(sp=i, plotdata.x, getindex.(plotdata.I, i),
             yerr=getindex.(plotdata.δI, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
-        plot!(sp=i, plotdata.x, getindex.(m,1), lab=i!=1 ? "" : "a2Po-f2Po-PoPo", l=(2))
+        #
+        plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2,))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
-
 savefig(
     joinpath("data", "exp_pro",
         "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
 #
-
+# Odd and Even waves
+fHeigher = (intensity_in_bins .- sum.(pw_intensities)) ./ intensity_in_bins
+filtodd = isodd.(getproperty.(LMs,:L))
+fOdd = map(x->sum(x .* filtodd), pw_intensities) ./ intensity_in_bins
+fEven = map(x->sum(x .* iszero.(filtodd)), pw_intensities) ./ intensity_in_bins
+let
+    plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=settings["tag"])
+    plot!(plotdata.x, fOdd, lab="Odd waves L ≤ 6")
+    plot!(plotdata.x, fEven, lab="Even waves L ≤ 6")
+    plot!(plotdata.x, fHeigher, lab="Higher waves L > 6")
+    plot!(ylims=(0,1))
+end
+savefig(
+    joinpath("data", "exp_pro",
+        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
