@@ -62,7 +62,7 @@ function integrand(cosθ,ϕ,pars)
     return sum(Im .- Id .* log.(Im))
 end
 
-ellh(pars) = integrate_dcosθdϕ(x->integrand(2x[1]-1,0.3+π*(2x[2]-1),pars))
+ellh(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
 #
 @time ellh([1.0,0,0])
 # [ 0.62, -0.8, +0.0057]
