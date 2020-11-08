@@ -23,8 +23,8 @@ settings = Dict(
     "t2" => -0.2,
     "tag" => "bottom-Po",
     "exchanges" => [1,3,5],
-    "initial_pars" => [0.7, -0.7, 0.0 ],
-    "scale_α" => 0.9,
+    "initial_pars" => [0.7, 0.7, 0.0 ],
+    "scale_α" => 0.8,
 )
 
 # current cesar model
@@ -74,7 +74,7 @@ fit_results = Dict(
     "fit_minimizer" => ft.minimizer,
     "fit_minimum" => ft.minimum)
 
-output_name = joinpath("data", "exp_pro","fit-results_$(settings["tag"])_Np=$(length(settings["exchanges"]))");
+output_name = joinpath("data", "exp_pro","fit-results_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"])");
 
 open(output_name,"w") do io
     TOML.print(io, Dict(
