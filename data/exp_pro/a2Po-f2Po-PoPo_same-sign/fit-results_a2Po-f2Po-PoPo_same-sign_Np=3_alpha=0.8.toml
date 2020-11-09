@@ -1,0 +1,14 @@
+[settings]
+tag = "a2Po-f2Po-PoPo_same-sign"
+exchanges = [1, 3, 5]
+pathtodata = "data\\exp_raw\\PLB_shifted"
+t2 = -0.2
+fitrange = [2.4, 3.0]
+initial_pars = [0.7, 0.7, 0.0]
+system = "compass_ηπ"
+"scale_α" = 0.8
+
+[fit_results]
+fit_converged = false
+fit_minimizer = [0.5565011648792377, 0.7312354624618701, -0.0019814576102259412]
+fit_minimum = -223694.93994355237

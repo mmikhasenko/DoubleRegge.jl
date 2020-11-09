@@ -21,13 +21,14 @@ using LinearAlgebra
 #  _|        _|    _|  _|    _|  _|        
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
-# settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
+# settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
-const fit_results = parsed["fit_results"]
+fit_results = parsed["fit_results"]
 const pfr = fit_results["fit_minimizer"]
 
 # 
@@ -116,8 +117,8 @@ let
     vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
 savefig(
-    joinpath("data", "exp_pro",
-        "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
+    joinpath("data", "exp_pro", settings["tag"],
+        "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # cosθ distributions
 let
@@ -138,8 +139,8 @@ let
     plot(ps..., size=(900,600))
 end
 savefig(
-    joinpath("data", "exp_pro",
-        "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
+    joinpath("data", "exp_pro", settings["tag"],
+        "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 
 # # projections
@@ -159,8 +160,8 @@ let
     plot!(xlab="m(ηπ) (GeV)")
 end
 savefig(
-    joinpath("data", "exp_pro",
-        "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
+    joinpath("data", "exp_pro", settings["tag"],
+        "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 # Odd and Even waves
 fHeigher = (intensity_in_bins .- sum.(pw_intensities)) ./ intensity_in_bins
@@ -182,5 +183,5 @@ let
     vspan!(fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
 savefig(
-    joinpath("data", "exp_pro",
-        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"])).pdf"))
+    joinpath("data", "exp_pro", settings["tag"],
+        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
