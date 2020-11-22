@@ -25,11 +25,42 @@ setsystem!(:compass_ηπ)
 #  _|    _|    _|  _|    _|    _|  _|    _|        
 #  _|    _|    _|    _|_|        _|        _|_|_|  
 
+using StaticArrays
+struct PartialWaveExpansion{N,T}
+    Ls::SVector{N,Int}
+    Ms::SVector{N,Int}
+    # 
+    As::SVector{N,T}
+end
+
+invensities(PWs::PartialWaveExpansion) = abs2.(PWs.As)
+phases(PWs::PartialWaveExpansion) = arg.(PWs.As)
+phases(PWs::PartialWaveExpansion, ref::Int) = arg.(PWs.As .* conj(PWs.As[ref]))
+
+struct BinnedIndependentPWAnalysis{N,T}
+    bincenters::Vector{Float64}
+    expansions::Vector{PartialWaveExpansion{N,T}}
+end
+
+function PartialWaveExpansion(intensities, phases,LMs)
+    As = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(intensities, phases)]
+    # 
+    Ls = getproperty.(LMs,:L)
+    Ms = getproperty.(LMs,:M)
+    # 
+    return PartialWaveExpansion(Ls, Ms, As)
+end
+
+#  _|_|_|  _|_|      _|_|    _|      _|    _|_|    
+#  _|    _|    _|  _|    _|  _|      _|  _|_|_|_|  
+#  _|    _|    _|  _|    _|    _|  _|    _|        
+#  _|    _|    _|    _|_|        _|        _|_|_|  
+
 fold(longp) = (Np = div(length(longp),2); longp[1:Np] .+ 1im .* longp[(Np+1):end])
 unfold(p) = vcat(real.(p), imag.(p))
 # test
 (v = rand(Complex{Float64},10); prod(fold(unfold(v)) .== v))
-# 
+
 function constrained_pw_projection(intensity_cosθϕ, init_pars, LMs)
     
     function integrand(cosθ,ϕ,pars)
@@ -41,9 +72,34 @@ function constrained_pw_projection(intensity_cosθϕ, init_pars, LMs)
     f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,fold(pars)))[1]
     #
     f = Optim.optimize(f, unfold(init_pars), BFGS(), # f′!, 
-                Optim.Options(show_trace = true, iterations=100))
+                Optim.Options(show_trace = true, g_tol=1e-3, iterations=100))
     return fold(f.minimizer)
-end
+end 
+
+function constrained_pw_projection_with_derivative(intensity_cosθϕ, init_pars, LMs)
+    
+    function integrand(cosθ,ϕ,pars)
+        Id = intensity_cosθϕ(cosθ, ϕ)
+        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
+        Im ≈ 0.0 && (Im=nextfloat(0.0))
+        return -Id*log(Im)
+    end
+    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,fold(pars)))[1]
+
+    # authomatic derivative
+    function f′(pars)
+        dint(cosθ,ϕ) = ForwardDiff.gradient(
+                p->sum(abs2, p) / (4π) + integrand(cosθ,ϕ, fold(p)),
+            unfold(pars))
+        integral = integrate_dcosθdϕ(dint; dims=2*length(pars))
+        fold(integral)
+    end
+    f′!(stor,pars) = copyto!(stor, f′(pars))
+    #
+    f = Optim.optimize(f, f′!, unfold(init_pars), BFGS(), # f′!, 
+                Optim.Options(show_trace = true, iterations=15))
+    return fold(f.minimizer)
+end 
 
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
@@ -52,9 +108,8 @@ end
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
 # settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
-
 # 
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
@@ -77,7 +132,7 @@ end
 constrained_pw_projection_fixed_model(m, init_pars) =
     constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, compass_ηπ_LMs)
 
-    # 
+#
 # data
 const LMs = compass_ηπ_LMs
 data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
@@ -100,6 +155,9 @@ writedlm(joinpath("data", "exp_pro", "pws_$(settings["tag"]).txt"),
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, plotdata.amps)]
 writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_compass_pw.txt"),
     hcat(unfold.(cPWs_starting_from_compass_pw)...))
+
+# bar(abs2.(cPWs_starting_from_compass_pw[1]))
+
 # # 
 @time cPWs_starting_from_pw = 
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, pw_projections)]
@@ -108,6 +166,7 @@ writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_startin
 # 
 pw_intensities = map(x->abs2.(x), pw_projections)
 cpw_intensities = map(x->abs2.(x), cPWs_starting_from_pw)
+cpw_intensities = map(x->abs2.(x), cPWs_starting_from_compass_pw)
 # # 
 let
     plot(layout=grid(3,3), size=(900,900))
@@ -123,8 +182,6 @@ let
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
-
-
 
 
 
