@@ -131,7 +131,7 @@ end
 
 constrained_pw_projection_fixed_model(m, init_pars) =
     constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, compass_ηπ_LMs)
-
+#
 #
 # data
 const LMs = compass_ηπ_LMs
@@ -156,18 +156,17 @@ writedlm(joinpath("data", "exp_pro", "pws_$(settings["tag"]).txt"),
 writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_compass_pw.txt"),
     hcat(unfold.(cPWs_starting_from_compass_pw)...))
 
-# bar(abs2.(cPWs_starting_from_compass_pw[1]))
-
 # # 
 @time cPWs_starting_from_pw = 
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, pw_projections)]
 writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_pw.txt"),
     hcat(unfold.(cPWs_starting_from_pw)...))
-# 
+#
 pw_intensities = map(x->abs2.(x), pw_projections)
 cpw_intensities = map(x->abs2.(x), cPWs_starting_from_pw)
-cpw_intensities = map(x->abs2.(x), cPWs_starting_from_compass_pw)
-# # 
+cpw_intensities′ = map(x->abs2.(x), cPWs_starting_from_compass_pw)
+#
+# 
 let
     plot(layout=grid(3,3), size=(900,900))
     for (i,(L,M)) in enumerate(LMs)
@@ -178,11 +177,30 @@ let
         #
         plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
         plot!(sp=i, plotdata.x, getindex.(cpw_intensities,i), lab=i!=1 ? "" : "cPW projection", l=(2))
+        # plot!(sp=i, plotdata.x, getindex.(cpw_intensities′,i), lab=i!=1 ? "" : "cPW projection", l=(2))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
 
+# LLH
+function ellh(m,pars)
+    LMs = compass_ηπ_LMs
+    function integrand(cosθ,ϕ,pars)
+        Id = intensity(m,cosθ,ϕ)
+        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
+        Im ≈ 0.0 && (Im=nextfloat(0.0))
+        return -Id*log(Im)
+    end
+    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
+    return f(pars)
+end
+ellh_from_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_pw)]
+ellh_from_compass_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_compass_pw)]
+ellh_from_pw - ellh_from_compass_pw
+# 
+
+↑
 
 
 # # projections
@@ -248,7 +266,6 @@ end
 #     return f.minimizer
 # end
 
-↑
 # @time
 # constrained_pw_projection_fixed_model(plotdata.x[2], pw_projections[2])
 # # 
