@@ -21,8 +21,8 @@ using DoubleRegge
 setsystem!(:compass_ηπ)
 
 # settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
@@ -85,16 +85,15 @@ function morefrequentrange(values, factor)
     len = factor*(length(values)-1)+1
     return range(values[1], values[end], length=len)
 end
-pull_mpoints = morefrequentrange(plotdata.x, 1)
-
+pull_mpoints = morefrequentrange(plotdata.x, 2)
 
 
 pw_projections = pw_project_fixed_model.(data.x[plotmap])
 
 
 # calculations
-cpw_forward  = pull_through_forward( pull_mpoints)
-cpw_backward = pull_through_backward(pull_mpoints)
+@time cpw_forward  = pull_through_forward( pull_mpoints)
+@time cpw_backward = pull_through_backward(pull_mpoints)
 
 
 let
@@ -119,10 +118,10 @@ let
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
+        # plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
         # plot!(sp=i, plotdata.x, getindex.(cpw_intensities, i), lab=i!=1 ? "" : "cPW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_f, i), lab=i!=1 ? "" : "cPW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_b, i), lab=i!=1 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_f, i), lab=i!=1 ? "" : "cPW projection", l=(2), c=3)
+        plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_b, i), lab=i!=1 ? "" : "cPW projection", l=(2), c=4)
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
@@ -153,9 +152,9 @@ let
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=2 ? "" : "data",)
         #
-        plot!(sp=i, pull_mpoints, getindex.(pw_phases,i), lab=i!=2 ? "" : "PW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=2 ? "" : "cPW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=2 ? "" : "cPW projection", l=(2))
+        # plot!(sp=i, plotdata.x, getindex.(pw_phases,i), lab=i!=2 ? "" : "PW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=2 ? "" : "cPW projection", l=(2), c=3)
+        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=2 ? "" : "cPW projection", l=(2), c=4)
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
