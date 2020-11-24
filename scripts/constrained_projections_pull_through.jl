@@ -11,6 +11,7 @@ using BenchmarkTools
 using Cuba
 
 # 
+using LaTeXStrings
 using Plots
 import Plots.PlotMeasures.mm
 theme(:wong2; size=(500,350), bottom_margin=5mm)
@@ -95,8 +96,12 @@ cpw_backward = pull_through_backward(pull_mpoints)
 let
     v1 = getproperty.(cpw_forward, :min)
     v2 = getproperty.(cpw_backward, :min)
-    plot([v1 v2] .- (v1+v2)/2, seriescolor=[3 4], lw=2, lab=["forwand" "backward"])
+    plot(pull_mpoints, [v1 v2] .- (v1+v2)/2, seriescolor=[3 4], lw=2, lab=["forwand" "backward"])
+    plot!(ylab=L"\Delta \mathcal{L}_\mathrm{ext}", xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})", title="resolved Barlet branches")
 end
+savefig(
+    joinpath("data", "exp_pro", settings["tag"],
+        "cPW_ellh_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # 
 cpw_intensities_f = map(x->abs2.(x), getproperty.(cpw_forward, :pars))
@@ -115,27 +120,42 @@ let
         plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_b, i), lab=i!=1 ? "" : "cPW projection", l=(2))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
-    plot!(xlab="m(ηπ) (GeV)")
+    plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
+end
+savefig(
+    joinpath("data", "exp_pro", settings["tag"],
+        "cPW_invensities_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+
+phase_with_resp2(x; δ=zeros(Float64, length(x))) = arg.(x .* conj(x[2]) .* cis.(-δ)) .+ δ
+function phase_with_resp2_with_common_shift(complexarray)
+    δ = 0.6
+    for _ in 1:2
+        naivearg = map(x->phase_with_resp2(x; δ=δ), complexarray)
+        δ = mean(naivearg)
+    end
+    return map(x->phase_with_resp2(x; δ=δ), complexarray)
 end
 
-phase_with_resp2(x) = arg.(x .* conj(x[2]))
-cpw_phases_f = map(phase_with_resp2, getproperty.(cpw_forward, :pars))
-cpw_phases_b = map(phase_with_resp2, getproperty.(cpw_backward, :pars))
+cpw_phases_f = phase_with_resp2_with_common_shift(getproperty.(cpw_forward, :pars))
+cpw_phases_b = phase_with_resp2_with_common_shift(getproperty.(cpw_backward, :pars))
 let
     plot(layout=grid(3,3), size=(900,900))
     for (i,(L,M)) in enumerate(LMs)
         scatter!(sp=i, plotdata.x, getindex.(plotdata.ϕ, i),
             yerr=getindex.(plotdata.δϕ, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
             c=:black, title="LM=$L$M", ms=3,
-            lab=i!=1 ? "" : "data",)
+            lab=i!=2 ? "" : "data",)
         #
-        plot!(sp=i, pull_mpoints, getindex.(pw_phases,i) .+ shift(L,M), lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=1 ? "" : "cPW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=1 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(pw_phases,i) .+ shift(L,M), lab=i!=2 ? "" : "PW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=2 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=2 ? "" : "cPW projection", l=(2))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
-    plot!(xlab="m(ηπ) (GeV)")
+    plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
 end
+savefig(
+    joinpath("data", "exp_pro", settings["tag"],
+        "cPW_phases_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 summaryline(t::NamedTuple) = [t.min, real.(t.pars)..., imag.(t.pars)...]
 
