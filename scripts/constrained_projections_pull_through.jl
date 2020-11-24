@@ -118,10 +118,10 @@ let
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        # plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2, :dash))
         # plot!(sp=i, plotdata.x, getindex.(cpw_intensities, i), lab=i!=1 ? "" : "cPW projection", l=(2))
         plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_f, i), lab=i!=1 ? "" : "cPW projection", l=(2), c=3)
-        plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_b, i), lab=i!=1 ? "" : "cPW projection", l=(2), c=4)
+        # plot!(sp=i, pull_mpoints, getindex.(cpw_intensities_b, i), lab=i!=1 ? "" : "cPW projection", l=(2), c=4)
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
@@ -131,31 +131,40 @@ savefig(
         "cPW_invensities_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 phase_with_resp2(x; δ=zeros(Float64, length(x))) = arg.(x .* conj(x[2]) .* cis.(-δ)) .+ δ
-function phase_with_resp2_with_common_shift(complexarray)
-    δ = 0.6
-    for _ in 1:2
-        naivearg = map(x->phase_with_resp2(x; δ=δ), complexarray)
-        δ = mean(naivearg)
+function followphaseandshift(sequence,)
+    v = copy(sequence)
+    for i in 2:length(v)
+        v[i] += (v[i]-v[i-1] < -π) * 2π -
+                (v[i]-v[i-1] > π) * 2π
     end
-    return map(x->phase_with_resp2(x; δ=δ), complexarray)
+    return v
 end
 
-pw_phases = phase_with_resp2_with_common_shift(pw_projections)
-cpw_phases_f = phase_with_resp2_with_common_shift(getproperty.(cpw_forward, :pars))
-cpw_phases_b = phase_with_resp2_with_common_shift(getproperty.(cpw_backward, :pars))
+# function phase_with_resp2_with_common_shift(complexarray)
+#     δ = 1.4
+#     for _ in 1:1
+#         naivearg = map(x->phase_with_resp2(x; δ=δ), complexarray)
+#         δ = mean(naivearg)
+#     end
+#     return map(x->phase_with_resp2(x; δ=δ), complexarray)
+# end
+
+pw_phases = phase_with_resp2.(pw_projections)
+cpw_phases_f = phase_with_resp2.(getproperty.(cpw_forward, :pars))
+cpw_phases_b = phase_with_resp2.(getproperty.(cpw_backward, :pars))
 let
     plot(layout=grid(3,3), size=(900,900))
     for (i,(L,M)) in enumerate(LMs)
-        i==2 && continue
-        scatter!(sp=i, plotdata.x, getindex.(plotdata.ϕ, i),
-            yerr=getindex.(plotdata.δϕ, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
-            c=:black, title="LM=$L$M", ms=3,
-            lab=i!=2 ? "" : "data",)
-        #
-        # plot!(sp=i, plotdata.x, getindex.(pw_phases,i), lab=i!=2 ? "" : "PW projection", l=(2))
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=2 ? "" : "cPW projection", l=(2), c=3)
-        plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=2 ? "" : "cPW projection", l=(2), c=4)
-        vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
+    i==2 && continue
+    scatter!(sp=i, plotdata.x, 180/π * getindex.(plotdata.ϕ, i),
+    yerr=180/π * getindex.(plotdata.δϕ, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
+    c=:black, title="LM=$L$M", ms=3,
+    lab=i!=2 ? "" : "data",)
+    #
+    plot!(sp=i, plotdata.x,   180/π * followphaseandshift(getindex.(pw_phases,i)), lab=i!=2 ? "" : "PW projection", l=(2, :dash))
+    plot!(sp=i, pull_mpoints, 180/π * followphaseandshift(getindex.(cpw_phases_f,i)), lab=i!=2 ? "" : "cPW projection", l=(2), c=3)
+    # plot!(sp=i, pull_mpoints, 180/π * followphaseandshift(getindex.(cpw_phases_b,i)), lab=i!=2 ? "" : "cPW projection", l=(2), c=4)
+    vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab=L"m_{\eta\pi}\,\,(\mathrm{GeV})")
 end
@@ -168,4 +177,4 @@ summaryline(t::NamedTuple) = [t.min, real.(t.pars)..., imag.(t.pars)...]
 packed_fitresutls_f = hcat(pull_mpoints, hcat(summaryline.(cpw_forward)...)')
 packed_fitresutls_b = hcat(pull_mpoints, hcat(summaryline.(cpw_backward)...)')
 
-writedlm(joinpath("data", "exp_pro", "pull_pws_$(settings["tag"]).txt"), [packed_fitresutls_f; packed_fitresutls_b])
+writedlm(joinpath("data", "exp_pro", settings["tag"], "pull_pws_$(settings["tag"]).txt"), [packed_fitresutls_f; packed_fitresutls_b])
