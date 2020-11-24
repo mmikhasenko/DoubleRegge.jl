@@ -20,9 +20,9 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 using DoubleRegge
 setsystem!(:compass_ηπ)
 
-
 # settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
@@ -88,6 +88,10 @@ end
 pull_mpoints = morefrequentrange(plotdata.x, 1)
 
 
+
+pw_projections = pw_project_fixed_model.(data.x[plotmap])
+
+
 # calculations
 cpw_forward  = pull_through_forward( pull_mpoints)
 cpw_backward = pull_through_backward(pull_mpoints)
@@ -104,6 +108,7 @@ savefig(
         "cPW_ellh_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # 
+pw_intensities = map(x->abs2.(x), pw_projections)
 cpw_intensities_f = map(x->abs2.(x), getproperty.(cpw_forward, :pars))
 cpw_intensities_b = map(x->abs2.(x), getproperty.(cpw_backward, :pars))
 let
@@ -136,17 +141,19 @@ function phase_with_resp2_with_common_shift(complexarray)
     return map(x->phase_with_resp2(x; δ=δ), complexarray)
 end
 
+pw_phases = phase_with_resp2_with_common_shift(pw_projections)
 cpw_phases_f = phase_with_resp2_with_common_shift(getproperty.(cpw_forward, :pars))
 cpw_phases_b = phase_with_resp2_with_common_shift(getproperty.(cpw_backward, :pars))
 let
     plot(layout=grid(3,3), size=(900,900))
     for (i,(L,M)) in enumerate(LMs)
+        i==2 && continue
         scatter!(sp=i, plotdata.x, getindex.(plotdata.ϕ, i),
             yerr=getindex.(plotdata.δϕ, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=2 ? "" : "data",)
         #
-        plot!(sp=i, pull_mpoints, getindex.(pw_phases,i) .+ shift(L,M), lab=i!=2 ? "" : "PW projection", l=(2))
+        plot!(sp=i, pull_mpoints, getindex.(pw_phases,i), lab=i!=2 ? "" : "PW projection", l=(2))
         plot!(sp=i, pull_mpoints, getindex.(cpw_phases_f,i), lab=i!=2 ? "" : "cPW projection", l=(2))
         plot!(sp=i, pull_mpoints, getindex.(cpw_phases_b,i), lab=i!=2 ? "" : "cPW projection", l=(2))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
