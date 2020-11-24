@@ -25,81 +25,32 @@ setsystem!(:compass_ηπ)
 #  _|    _|    _|  _|    _|    _|  _|    _|        
 #  _|    _|    _|    _|_|        _|        _|_|_|  
 
-using StaticArrays
-struct PartialWaveExpansion{N,T}
-    Ls::SVector{N,Int}
-    Ms::SVector{N,Int}
-    # 
-    As::SVector{N,T}
-end
-
-invensities(PWs::PartialWaveExpansion) = abs2.(PWs.As)
-phases(PWs::PartialWaveExpansion) = arg.(PWs.As)
-phases(PWs::PartialWaveExpansion, ref::Int) = arg.(PWs.As .* conj(PWs.As[ref]))
-
-struct BinnedIndependentPWAnalysis{N,T}
-    bincenters::Vector{Float64}
-    expansions::Vector{PartialWaveExpansion{N,T}}
-end
-
-function PartialWaveExpansion(intensities, phases,LMs)
-    As = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(intensities, phases)]
-    # 
-    Ls = getproperty.(LMs,:L)
-    Ms = getproperty.(LMs,:M)
-    # 
-    return PartialWaveExpansion(Ls, Ms, As)
-end
-
-#  _|_|_|  _|_|      _|_|    _|      _|    _|_|    
-#  _|    _|    _|  _|    _|  _|      _|  _|_|_|_|  
-#  _|    _|    _|  _|    _|    _|  _|    _|        
-#  _|    _|    _|    _|_|        _|        _|_|_|  
-
-fold(longp) = (Np = div(length(longp),2); longp[1:Np] .+ 1im .* longp[(Np+1):end])
-unfold(p) = vcat(real.(p), imag.(p))
-# test
-(v = rand(Complex{Float64},10); prod(fold(unfold(v)) .== v))
-
-function constrained_pw_projection(intensity_cosθϕ, init_pars, LMs)
+# using StaticArrays
+# struct PartialWaveExpansion{N,T}
+#     Ls::SVector{N,Int}
+#     Ms::SVector{N,Int}
+#     # 
+#     As::SVector{N,T}
+#     # 
+#     function PartialWaveExpansion(intensities, phases, LMs)
+#         As = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(intensities, phases)]
+#         # 
+#         Ls = getproperty.(LMs,:L)
+#         Ms = getproperty.(LMs,:M)
+#         # 
+#         return new(Ls, Ms, As)
+#     end
     
-    function integrand(cosθ,ϕ,pars)
-        Id = intensity_cosθϕ(cosθ, ϕ)
-        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
-        Im ≈ 0.0 && (Im=nextfloat(0.0))
-        return -Id*log(Im)
-    end
-    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,fold(pars)))[1]
-    #
-    f = Optim.optimize(f, unfold(init_pars), BFGS(), # f′!, 
-                Optim.Options(show_trace = true, g_tol=1e-3, iterations=100))
-    return fold(f.minimizer)
-end 
+# end
 
-function constrained_pw_projection_with_derivative(intensity_cosθϕ, init_pars, LMs)
-    
-    function integrand(cosθ,ϕ,pars)
-        Id = intensity_cosθϕ(cosθ, ϕ)
-        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
-        Im ≈ 0.0 && (Im=nextfloat(0.0))
-        return -Id*log(Im)
-    end
-    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,fold(pars)))[1]
+# invensities(PWs::PartialWaveExpansion) = abs2.(PWs.As)
+# phases(PWs::PartialWaveExpansion) = arg.(PWs.As)
+# phases(PWs::PartialWaveExpansion, ref::Int) = arg.(PWs.As .* conj(PWs.As[ref]))
 
-    # authomatic derivative
-    function f′(pars)
-        dint(cosθ,ϕ) = ForwardDiff.gradient(
-                p->sum(abs2, p) / (4π) + integrand(cosθ,ϕ, fold(p)),
-            unfold(pars))
-        integral = integrate_dcosθdϕ(dint; dims=2*length(pars))
-        fold(integral)
-    end
-    f′!(stor,pars) = copyto!(stor, f′(pars))
-    #
-    f = Optim.optimize(f, f′!, unfold(init_pars), BFGS(), # f′!, 
-                Optim.Options(show_trace = true, iterations=15))
-    return fold(f.minimizer)
-end 
+# struct BinnedIndependentPWAnalysis{N,T}
+#     bincenters::Vector{Float64}
+#     expansions::Vector{PartialWaveExpansion{N,T}}
+# end
 
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
@@ -150,12 +101,10 @@ pw_projections = pw_project_fixed_model.(data.x[plotmap])
 writedlm(joinpath("data", "exp_pro", "pws_$(settings["tag"]).txt"),
     hcat(unfold.(pw_projections)...))
 
-
-@time cPWs_starting_from_compass_pw =
-    [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, plotdata.amps)]
-writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_compass_pw.txt"),
-    hcat(unfold.(cPWs_starting_from_compass_pw)...))
-
+# @time cPWs_starting_from_compass_pw =
+#     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, plotdata.amps)]
+# writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_compass_pw.txt"),
+#     hcat(unfold.(cPWs_starting_from_compass_pw)...))
 # # 
 @time cPWs_starting_from_pw = 
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, pw_projections)]
@@ -164,9 +113,9 @@ writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_startin
 #
 pw_intensities = map(x->abs2.(x), pw_projections)
 cpw_intensities = map(x->abs2.(x), cPWs_starting_from_pw)
-cpw_intensities′ = map(x->abs2.(x), cPWs_starting_from_compass_pw)
-#
-# 
+# cpw_intensities′ = map(x->abs2.(x), cPWs_starting_from_compass_pw)
+
+
 let
     plot(layout=grid(3,3), size=(900,900))
     for (i,(L,M)) in enumerate(LMs)
@@ -177,30 +126,69 @@ let
         #
         plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
         plot!(sp=i, plotdata.x, getindex.(cpw_intensities,i), lab=i!=1 ? "" : "cPW projection", l=(2))
-        # plot!(sp=i, plotdata.x, getindex.(cpw_intensities′,i), lab=i!=1 ? "" : "cPW projection", l=(2))
         vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
 
-# LLH
-function ellh(m,pars)
-    LMs = compass_ηπ_LMs
-    function integrand(cosθ,ϕ,pars)
-        Id = intensity(m,cosθ,ϕ)
-        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
-        Im ≈ 0.0 && (Im=nextfloat(0.0))
-        return -Id*log(Im)
-    end
-    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
-    return f(pars)
+phase_with_resp2(x) = arg.(x .* conj(x[2]))
+pw_phases = map(phase_with_resp2, pw_projections)
+cpw_phases = map(phase_with_resp2, cPWs_starting_from_pw)
+# cpw_phases′ = map(phase_with_resp2, cPWs_starting_from_compass_pw)
+
+function shift(L,M) 
+    (L,M) == (1,1) && return 2π
+    return 0.0
 end
-ellh_from_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_pw)]
-ellh_from_compass_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_compass_pw)]
-ellh_from_pw - ellh_from_compass_pw
-# 
+
+let
+    plot(layout=grid(3,3), size=(900,900))
+    for (i,(L,M)) in enumerate(LMs)
+        scatter!(sp=i, plotdata.x, getindex.(plotdata.ϕ, i),
+            yerr=getindex.(plotdata.δϕ, i), xerr=(plotdata.x[2]-plotdata.x[1])/2,
+            c=:black, title="LM=$L$M", ms=3,
+            lab=i!=1 ? "" : "data",)
+        #
+        plot!(sp=i, plotdata.x, getindex.(pw_phases,i) .+ shift(L,M), lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, plotdata.x, getindex.(cpw_phases,i), lab=i!=1 ? "" : "cPW projection", l=(2))
+        # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
+    end
+    plot!(xlab="m(ηπ) (GeV)")
+end
 
 ↑
+
+# p′ = cPWs_starting_from_pw[1] .* cis(-arg(cPWs_starting_from_pw[1][2]))
+
+# p′′ = let
+#     f = rand(0:1, 7)
+#     [rand()<0.5 ? p : p' for p in p′]
+# end
+
+# ellh(plotdata.x[1],cPWs_starting_from_pw[1])
+# ellh(plotdata.x[1],p′)
+# ellh(plotdata.x[1],p′')
+# ellh(plotdata.x[1],p′′)
+
+# # LLH
+# function ellh(m,pars)
+#     LMs = compass_ηπ_LMs
+#     function integrand(cosθ,ϕ,pars)
+#         Id = intensity(m,cosθ,ϕ)
+#         Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
+#         Im ≈ 0.0 && (Im=nextfloat(0.0))
+#         return -Id*log(Im)
+#     end
+#     f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
+#     return f(pars)
+# end
+# ellh_from_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_pw)]
+
+# ellh_from_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_pw)]
+
+# # ellh_from_compass_pw = [ellh(m,pars) for (m, pars) in zip(plotdata.x,cPWs_starting_from_compass_pw)]
+# # ellh_from_pw - ellh_from_compass_pw
+
 
 
 # # projections

@@ -11,6 +11,8 @@ using StaticArrays
 using LinearAlgebra
 using Cuba
 using SpecialFunctions
+using Optim
+
 
 export TwoParticleDiffraction
 export setsystem!
@@ -55,5 +57,10 @@ include("bootstrap.jl")
 
 export inlims
 include("utils.jl")
+
+export constrained_pw_projection
+export constrained_pw_projection_with_derivative
+export fold, unfold
+include("constrainedpw.jl")
 
 end  # module DoubleRegge
