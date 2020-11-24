@@ -45,8 +45,6 @@ function pw_project_fixed_model(m)
 end
 #
 
-
-
 # data
 const LMs = compass_ηπ_LMs
 data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
@@ -59,39 +57,6 @@ fitdata = data[fitrangemap]
 plotmap = map(x->inlims(x.x, (2.4,3.0)), data)
 plotdata = data[plotmap]
 # 
-ind = 9
-m9 = plotdata.x[ind]
-I9 = integrate_dcosθdϕ((cosθ,ϕ)->intensity(m9, cosθ, ϕ))[1]
-
-#
-pw_projection = pw_project_fixed_model.(plotdata.x[ind])
-#
-
-@time cPW9 = constrained_pw_projection_fixed_model(m9, pw_projection)
-
-function fit_from_random_spot()
-    initial_pars = rand(Complex{Float64}, length(LMs))
-    initial_pars ./= sum(abs2, initial_pars) / I9
-    return constrained_pw_projection_fixed_model(m9, initial_pars)
-end
-
-@time fit_from_random_spot()
-
-@time cPW9_sample  = [fit_from_random_spot() for _ in 1:10];
-@time cPW9_sample_ = [fit_from_random_spot() for _ in 1:10];
-
-comb = vcat(cPW9_sample, cPW9_sample_)
-scatter(map(x->abs2(x.pars[2]), comb), getproperty.(comb, :min))
-
-abs2(cPWs_starting_from_pw[9][2])
-
-getproperty.(cPW9_sample, :min)
-getproperty.(cPW9_sample_, :min)
-
-typeof(LMs)
-
-
-
 
 struct samplePWA{N}
     amplitude::Function
@@ -106,8 +71,6 @@ struct samplePWA{N}
     end
 end
 Npars(s::samplePWA{N}) where N = N
-
-
 
 function randcomplexwithnorm(Npars, integral)
     vals = 2*rand(Complex{Float64}, Npars) .- (1+1im)
@@ -124,31 +87,33 @@ function constrained_pw_projection_fixed_model!(s::samplePWA, N)
     end
 end
 
-
+# create the structures
 getsamplePWA(m) = samplePWA((cosθ,ϕ)->model(m,cosθ,ϕ; pars=fixed_pars)*sqrt(q(m)), LMs)
 
+# calculate: long ~ 10h
 structures = getsamplePWA.(plotdata.x)
-
 constrained_pw_projection_fixed_model!.(structures, 10)
 
-structures[1].samples
-
-
+# plot
 let
     ps = [scatter(map(x->abs2(x.pars[2]), comb), getproperty.(comb, :min)) for comb in getproperty.(structures, :samples)]
     plot(ps..., size=(1500,1000))
 end
 
 
-structures[1].samples
-
-
+# pack to a flat tables
 summaryline(t::NamedTuple) = [t.min, real.(t.pars)..., imag.(t.pars)...]
-
 function summaryline(s::samplePWA, m)
     ls = summaryline.(s.samples)
     [fill(m, length(ls)) hcat(ls...)']
 end
 
+# write to a file
 packed_fitresutls = vcat(summaryline.(structures, plotdata.x)...)
 writedlm(joinpath("data", "exp_pro", "sample_pws_$(settings["tag"]).txt"), packed_fitresutls)
+
+# read from the file
+packed_fitresutls = readdlm(joinpath("data", "exp_pro", "sample_pws_$(settings["tag"]).txt"))
+
+# unpacked fitresutls
+# Table(packed_fitresutls[:,1:2], (:a,:b))
