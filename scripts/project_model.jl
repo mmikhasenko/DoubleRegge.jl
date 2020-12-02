@@ -8,6 +8,7 @@ using Cuba
 using Plots
 import Plots.PlotMeasures.mm
 theme(:wong2; size=(500,350), bottom_margin=5mm)
+using LaTeXStrings
 # 
 using DoubleRegge
 setsystem!(:compass_ηπ)
@@ -21,10 +22,9 @@ using LinearAlgebra
 #  _|        _|    _|  _|    _|  _|        
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
-# settings_file = joinpath("data", "exp_pro","fit-results_a2Po-f2f2-PoPo_Np=3.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
 settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
@@ -120,6 +120,36 @@ end
 savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+#
+# let bin = 1
+#     mηπ = fitdata.x[bin]
+#     cosθv = range(-1,1, length=100)
+#     ϕv = range(-π, π, length=95)
+#     calv = intensity.(mηπ,cosθv',ϕv)
+#     heatmap(cosθv, ϕv, calv, colorbar=false,
+#         xlab=L"\cos\theta", ylab=L"\phi", title="$(round(mηπ, digits=2)) GeV")
+# end
+
+setfirstargument(x1,f) = (x2,x3)->f(x1,x2,x3)
+setthirdfourtharguments(x3,x4,f) = (x1,x2)->f(x1,x2,x3,x4)
+# 
+function phi_moment(f, l; forward=true)
+    cosrange = forward ? (0,1) : (-1,0)
+    return integrate_dcosθdϕ((cosθ,ϕ)->cos(l*ϕ)*f(cosθ,ϕ), cosrange)[1] /
+           integrate_dcosθdϕ(f, cosrange)[1]
+end
+
+# phi asymmetry
+let 
+    plot(xlab=L"m_{\eta\pi}\,(\textrm{GeV})", ylab=L"<\cos\,\phi>", size=(500,350))
+    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),1; forward=true), c=2, lab="forward")
+    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),1; forward=false), c=3, lab="backward")
+    scatter!(plotdata.x, phi_moment.(setthirdfourtharguments.(plotdata.amps,Ref(LMs),(x...)->abs2(recamp(x...))),1; forward=true), c=2, lab="")
+    scatter!(plotdata.x, phi_moment.(setthirdfourtharguments.(plotdata.amps,Ref(LMs),(x...)->abs2(recamp(x...))),1; forward=false), c=3, lab="")
+end
+savefig(
+    joinpath("data", "exp_pro", settings["tag"],
+        "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # cosθ distributions
 let
@@ -142,6 +172,9 @@ end
 savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+#
+
+
 
 # # projections
 pw_projections = [map(LM->pw_project_fixed(m,LM...), LMs) for m in data.x[plotmap]]
@@ -194,3 +227,31 @@ end
 savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+#
+
+
+let 
+    pathtofolder = joinpath("data", "exp_pro", settings["tag"])
+    inputfiles = readdir(pathtofolder)
+    outputfile = joinpath(pathtofolder, "_combined.pdf")
+    inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
+end
+
+
+produced_files = [
+    "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
+    ]
+
+let 
+    pathtofolder = joinpath("data", "exp_pro", settings["tag"])
+    # inputfiles = readdir(pathtofolder, join=true)
+    outputfile = joinpath(pathtofolder, "_combined.pdf")
+    # inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
+    inputfiles = joinpath.(Ref(pathtofolder), produced_files)
+    # # # 
+    run(`pdftk $inputfiles cat output $outputfile`)
+end
