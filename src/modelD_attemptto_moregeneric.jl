@@ -15,6 +15,29 @@ const α_a2 = trajectory(0.9, 1-0.9*0.77^2)
 const α_f2 = trajectory(0.89, 0.47)
 const α_ℙ  = trajectory(0.25, 1.08)
 #
+
+
+#
+struct TopBottomExchanges
+    α_top::trajectory
+    α_bot::trajectory
+    eta_forward::Bool
+    label::String
+end
+#
+const sixexchages = [
+    TopBottomExchanges(α_a2, α_ℙ,  true , "a2/ℙ" ),
+    TopBottomExchanges(α_a2, α_f2, true , "a2/f2"),
+    TopBottomExchanges(α_f2, α_ℙ,  false, "f2/ℙ" ),
+    TopBottomExchanges(α_f2, α_f2, false, "f2/f2"),
+    TopBottomExchanges(α_ℙ,  α_ℙ,  false, "ℙ/ℙ"  ),
+    TopBottomExchanges(α_ℙ,  α_f2, false, "ℙ/f2" )]
+#
+
+modelDR(exchs::TopBottomExchanges, vars, α′) =
+    modelDR(exchs.α_top, exchs.α_bot, vars;
+    exchs.η_forward,  α′=0.9)
+#
 function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
     η_forward::Bool=true,  α′=0.9)
     # 
@@ -56,11 +79,3 @@ function build_model(exchanges, t2::Float64, scalar_α, s0=G.s0)
     end
     return model
 end
-
-const sixexchages =
-    [(α_a2, α_ℙ,  true , "a2/ℙ" ),
-     (α_a2, α_f2, true , "a2/f2"),
-     (α_f2, α_ℙ,  false, "f2/ℙ" ),
-     (α_f2, α_f2, false, "f2/f2"),
-     (α_ℙ,  α_ℙ,  false, "ℙ/ℙ"  ),
-     (α_ℙ,  α_f2, false, "ℙ/f2" )];

@@ -61,7 +61,7 @@ data = Table(data, amps=amplitudes)
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = data[fitrangemap]
 # plot 
-plotmap = map(x->inlims(x.x, (2.4,3.0)), data)
+plotmap = map(x->inlims(x.x, (2.2,3.0)), data)
 plotdata = data[plotmap]
 
 
@@ -129,20 +129,19 @@ let
         #
         stat = hcat([dNdcosθ.(cosθv; amps=randA(fitdata)[bin], LMs=LMs) for _ in 1:1000]...)
         err = sqrt.(diag(cov(stat; dims=2)))
-        # 
+        #
         plot(xlab="cosθ", title="$(round(fitdata.x[bin]; digits=2)) GeV")
         plot!(cosθv, calv, ribbon=err, lab="")
         # 
         projection(cosθ) = quadgk(ϕ->intensity(fitdata.x[bin], cosθ, ϕ), -π, π)[1]
-        plot!(cosθv, projection.(cosθv), lab="", lw=2)
+        plot!(cosθv, projection.(cosθv), lab="", lw=2, yaxis=nothing)
     end
     ps = make_plot.(1:length(fitdata.x))
-    plot(ps..., size=(900,600))
+    plot(ps..., size=(1100,500), layout=grid(3,5))
 end
 savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
-
 
 # # projections
 pw_projections = [map(LM->pw_project_fixed(m,LM...), LMs) for m in data.x[plotmap]]
@@ -164,6 +163,15 @@ savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
+tolab(LM) = "$(LM.L)$(LM.M)"
+
+bar([sum(getindex.(fitdata.I, i)) for (i,LM) in enumerate(LMs)],
+    xticks=(1:7, tolab.(LMs)), xlab="LM", ylab="intensity", lab="")
+
+bar([sum(getindex.(pw_intensities[6:end], i)) for (i,LM) in enumerate(LMs)],
+    xticks=(1:7, tolab.(LMs)), xlab="LM", ylab="intensity", lab="")
+#
+
 # Odd and Even waves
 fHeigher = (intensity_in_bins .- sum.(pw_intensities)) ./ intensity_in_bins
 filtodd = isodd.(getproperty.(LMs,:L))
