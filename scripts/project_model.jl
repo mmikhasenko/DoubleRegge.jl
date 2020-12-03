@@ -297,7 +297,7 @@ produced_files = [
 let 
     pathtofolder = joinpath("data", "exp_pro", settings["tag"])
     # inputfiles = readdir(pathtofolder, join=true)
-    outputfile = joinpath(pathtofolder, "_combined.pdf")
+    outputfile = joinpath(pathtofolder, "combined_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf")
     # inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
     inputfiles = joinpath.(Ref(pathtofolder), produced_files)
     #
