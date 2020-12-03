@@ -47,10 +47,38 @@ function pw_project_fixed(m::Float64,L,M)
     return pw_project(amplitude,L,M)
 end
 # 
-model_integral(m)          = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)))[1]*q(m)
-model_integral_forward(m)  = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(0,1))[1]*q(m)
-model_integral_backward(m) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model(m,cosθ,ϕ)),(-1,0))[1]*q(m)
+model_integral(m; pars=pfr)          = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)))[1]
+model_integral_forward(m; pars=pfr)  = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)),(0,1))[1]
+model_integral_backward(m; pars=pfr) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)),(-1,0))[1]
 
+δ(i; n=3) = (1:n .== i)
+integral_interf(m,i,j) = model_integral(m; pars=pfr.*δ(i)+pfr.*δ(j)) - 
+    model_integral(m; pars=pfr.*δ(i)) -
+    model_integral(m; pars=pfr.*δ(j));
+# 
+contribution_matrix(m) = [(i>j ? 0 : integral_interf(m,i,j)/(i==j ? 2 : 1)) for i in 1:3, j in 1:3]
+let
+    m = sum(contribution_matrix.(fitdata.x[1:2]))
+    heatmap([mi==0.0 ? NaN : mi for mi in m],
+        xticks = (1:3, getindex.(exchanges,4)),
+        yticks = (1:3, getindex.(exchanges,4)), colorbar=false)
+    # 
+    mn = m ./ sum(m)
+    for i in Iterators.CartesianIndices(m)
+        (i[1]>i[2]) && continue
+        annotate!([(i[2], i[1],
+            text("$(Int(round(m[i], digits=0))) / $(Int(round(100*mn[i], digits=0)))%", 10, :red))])
+    end
+    plot!(size=(400,350), title="contributions of different diagrams")
+    ellh = fit_results["fit_minimum"]
+    s = prod("$l: $v,\n" for (l,v) in zip(getindex.(exchanges,4), round.(pfr, digits=2))) 
+    s *= "extLLH: "*string(round(ellh, digits=1))
+    annotate!([(0.6,3,text(s, 10, :left))])
+end
+savefig(
+    joinpath("data", "exp_pro", settings["tag"],
+        "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+# 
 
 # data
 const LMs = compass_ηπ_LMs
@@ -88,7 +116,7 @@ asymm_data = [asymmetry(f,b) for (f,b) in zip(data_forward_in_bins,data_backward
     data_forward_in_bins,
     data_backward_in_bins,
     sqrt.(sum.(x->x^2, plotdata.δI)/2))]
-# 
+#
 asymm_model = [asymmetry(f,b) for (f,b) in zip(intensity_forward_in_bins, intensity_backward_in_bins)]
 # 
 let
@@ -139,14 +167,34 @@ function phi_moment(f, l; forward=true)
            integrate_dcosθdϕ(f, cosrange)[1]
 end
 
-# phi asymmetry
-let 
-    plot(xlab=L"m_{\eta\pi}\,(\textrm{GeV})", ylab=L"<\cos\,\phi>", size=(500,350))
-    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),1; forward=true), c=2, lab="forward")
-    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),1; forward=false), c=3, lab="backward")
-    scatter!(plotdata.x, phi_moment.(setthirdfourtharguments.(plotdata.amps,Ref(LMs),(x...)->abs2(recamp(x...))),1; forward=true), c=2, lab="")
-    scatter!(plotdata.x, phi_moment.(setthirdfourtharguments.(plotdata.amps,Ref(LMs),(x...)->abs2(recamp(x...))),1; forward=false), c=3, lab="")
+phi_moment_data(amps; l, forward) = phi_moment.(
+    setthirdfourtharguments.(amps, Ref(LMs),(x...)->abs2(recamp(x...))),l;
+        forward=forward)
+#
+
+function take_stdiv_of_vector(vector_of_vector)
+    mat = hcat(vector_of_vector...)
+    err = sqrt.(diag(cov(mat; dims=2)))
+    return err
 end
+
+# phi asymmetry
+function phiasymmplot(l)
+    plot(xlab=L"m_{\eta\pi}\,(\textrm{GeV})", ylab=(l==1 ? L"<\cos\,\phi>" : L"<\cos\,2\phi>"), size=(500,350))
+    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),l; forward=true ), lw=2, c=2, lab="forward")
+    plot!(plotdata.x, phi_moment.(setfirstargument.(plotdata.x, intensity),l; forward=false), lw=2, c=3, lab="backward")
+    # let
+    vals = phi_moment_data(plotdata.amps; l=l, forward=true)
+    err = take_stdiv_of_vector([phi_moment_data(randA(plotdata); l=l, forward=true) for _ in 1:100])
+    scatter!(plotdata.x, vals, yerr=err, c=2, lab="")
+    #
+    vals = phi_moment_data(plotdata.amps; l=l, forward=false)
+    err = take_stdiv_of_vector([phi_moment_data(randA(plotdata); l=l, forward=false) for _ in 1:100])
+    scatter!(plotdata.x, vals, yerr=err, c=3, lab="")
+end
+plot(phiasymmplot(1), phiasymmplot(2), size=(900,350), layout=grid(1,2))
+vspan!(sp=1, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
+vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
@@ -173,7 +221,6 @@ savefig(
     joinpath("data", "exp_pro", settings["tag"],
         "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
-
 
 
 # # projections
@@ -241,6 +288,7 @@ end
 produced_files = [
     "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
     "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
     "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
     "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
     "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
@@ -252,6 +300,6 @@ let
     outputfile = joinpath(pathtofolder, "_combined.pdf")
     # inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
     inputfiles = joinpath.(Ref(pathtofolder), produced_files)
-    # # # 
+    #
     run(`pdftk $inputfiles cat output $outputfile`)
 end
