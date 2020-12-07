@@ -29,6 +29,7 @@ function sπp(vars, system=G.system)
     @unpack mb², mt², mr², m1², m2² = system^2
     sinθ = sqrt(1-cosθ^2)
     _cosθ2 = cosθ2(vars)
+    abs(_cosθ2) > 1 && error("|cos|>1: cos=$(_cosθ2), vars: ", vars)
     sinθ2 = sqrt(1-_cosθ2^2)
     #
     return mr²+m2²+(s1+m2²-m1²)*(s-s1-mr²) / (2s1) -

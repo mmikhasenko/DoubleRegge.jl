@@ -16,7 +16,7 @@ const α_f2 = trajectory(0.89, 0.47)
 const α_ℙ  = trajectory(0.25, 1.08)
 #
 function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
-    η_forward::Bool=true,  α′=0.9)
+    η_forward::Bool=true,  α′::Float64 = 0.9, s2shift::Float64 = 0.0)
     # 
     @unpack s, s1, cosθ, ϕ, t2 = vars
     #
@@ -28,7 +28,7 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
     #
     K = Kfactor(vars)
     prefactor = -K*sf_gamma(1-α1)*sf_gamma(1-α2) *
-        (α′*s1)^α1 * (α′*s2)^α2 / (α′*s)
+        (α′*s1)^α1 * (α′*(s2+s2shift))^α2 / (α′*s)
     #
     # vertex funcions
     τ1 = τ2 = 1.0
