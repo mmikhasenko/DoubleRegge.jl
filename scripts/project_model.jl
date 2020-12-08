@@ -25,7 +25,8 @@ using LinearAlgebra
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign_s2shift", "fit-results_a2Po-f2Po-PoPo_opposite-sign_s2shift_Np=3_alpha=0.8.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign_s2shift", "fit-results_a2Po-f2Po-PoPo_opposite-sign_s2shift_Np=3_alpha=0.8.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-a2f2-f2f2_opposite-sign", "fit-results_a2Po-f2Po-a2f2-f2f2_opposite-sign_Np=4_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
@@ -52,17 +53,18 @@ model_integral(m; pars=pfr)          = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixe
 model_integral_forward(m; pars=pfr)  = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)),(0,1))[1]
 model_integral_backward(m; pars=pfr) = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)),(-1,0))[1]
 
-δ(i; n=3) = (1:n .== i)
+const Np = length(pfr)
+δ(i; n=Np) = (1:n .== i)
 integral_interf(m,i,j) = model_integral(m; pars=pfr.*δ(i)+pfr.*δ(j)) - 
     model_integral(m; pars=pfr.*δ(i)) -
     model_integral(m; pars=pfr.*δ(j));
 # 
-contribution_matrix(m) = [(i>j ? 0 : integral_interf(m,i,j)/(i==j ? 2 : 1)) for i in 1:3, j in 1:3]
+contribution_matrix(m) = [(i>j ? 0 : integral_interf(m,i,j)/(i==j ? 2 : 1)) for i in 1:Np, j in 1:Np]
 let
-    m = sum(contribution_matrix.(fitdata.x[1:2]))
+    m = sum(contribution_matrix.(fitdata.x))
     heatmap([mi==0.0 ? NaN : mi for mi in m],
-        xticks = (1:3, getindex.(exchanges,4)),
-        yticks = (1:3, getindex.(exchanges,4)), colorbar=false)
+        xticks = (1:Np, getindex.(exchanges,4)),
+        yticks = (1:Np, getindex.(exchanges,4)), colorbar=false)
     # 
     mn = m ./ sum(m)
     for i in Iterators.CartesianIndices(m)

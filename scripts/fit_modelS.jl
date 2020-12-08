@@ -68,18 +68,31 @@ using DoubleRegge
 #     "scale_α" => 0.8,
 # )
 
-# bottom-Po model opposite sign
+# # bottom-Po model opposite sign
+# settings = Dict(
+#     "system" => "compass_ηπ",
+#     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+#     "fitrange" => [2.4, 3.0],
+#     "t2" => -0.2,
+#     "tag" => "a2Po-f2Po-PoPo_opposite-sign_s2shift",
+#     "exchanges" => [1,3,5],
+#     "initial_pars" => [0.7, -0.7, 0.0 ],
+#     "s2_shift" => 30.0,
+#     "scale_α" => 0.8,
+# )
+# four-parameters fit
 settings = Dict(
     "system" => "compass_ηπ",
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
     "fitrange" => [2.4, 3.0],
     "t2" => -0.2,
-    "tag" => "a2Po-f2Po-PoPo_opposite-sign_s2shift",
-    "exchanges" => [1,3,5],
-    "initial_pars" => [0.7, -0.7, 0.0 ],
-    "s2_shift" => 30.0,
+    "tag" => "a2Po-f2Po-a2f2-f2f2_opposite-sign",
+    "exchanges" => [1,2,3,4],
+    "initial_pars" => [0.7, 0.2, -0.7, -0.2],
+    "s2_shift" => 0.0,
     "scale_α" => 0.8,
 )
+
 
 
 setsystem!(Symbol(settings["system"]))
@@ -108,11 +121,11 @@ ellh(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
 
 # 
 integrand′(cosθ,ϕ,pars) = ForwardDiff.gradient(p->integrand(cosθ,ϕ,p), pars)
-ellh′(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand′(cosθ,ϕ,pars), dims=3)
+ellh′(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand′(cosθ,ϕ,pars), dims=length(pars))
 ellh′!(stor,pars) = (stor .= ellh′(pars)) 
 
 #
-@time ellh([1.0,0,0])
+# @time ellh([1.0,0,0])
 # [ 0.62, -0.8, +0.0057]
 ft = Optim.optimize(ellh, ellh′!, settings["initial_pars"], BFGS(),
                Optim.Options(show_trace = true, g_tol=1e-4, iterations=15))
