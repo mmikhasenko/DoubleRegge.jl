@@ -47,10 +47,10 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
 end
 
 
-function build_model(exchanges, t2::Float64, scalar_α, s0=G.s0)
+function build_model(exchanges, t2::Float64, scalar_α, s0=G.s0; s2shift=0.0)
     function model(m,cosθ,ϕ; pars)
         vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
-        generator = (p*modelDR(t[1], t[2], vars; η_forward=t[3], α′=scalar_α)
+        generator = (p*modelDR(t[1], t[2], vars; η_forward=t[3], α′=scalar_α, s2shift=s2shift)
             for (p,t) in zip(pars, exchanges))
         return mysum(typeof(1im*pars[1]), generator)
     end

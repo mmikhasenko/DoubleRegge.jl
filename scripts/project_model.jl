@@ -24,7 +24,8 @@ using LinearAlgebra
 
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
 # settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+# settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign_s2shift", "fit-results_a2Po-f2Po-PoPo_opposite-sign_s2shift_Np=3_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
@@ -37,7 +38,7 @@ setsystem!(Symbol(settings["system"]))
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift=settings["s2_shift"])
 fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
 fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
 intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))

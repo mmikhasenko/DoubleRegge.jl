@@ -25,6 +25,7 @@ using DoubleRegge
 #     "tag" => "a2Po-f2Po-PoPo_oppoite-sign",
 #     "exchanges" => [1,3,5],
 #     "initial_pars" => [0.7, 0.7, 0.0 ],
+#     "s2_shift" => 30.0,
 #     "scale_α" => 0.8,
 # )
 
@@ -37,6 +38,7 @@ using DoubleRegge
 #     "tag" => "a2Po-f2Po-PoPo_opposite-sign",
 #     "exchanges" => [1,3,5],
 #     "initial_pars" => [0.7, -0.7, 0.0 ],
+#     "s2_shift" => 30.0,
 #     "scale_α" => 0.8,
 # )
 
@@ -49,18 +51,33 @@ using DoubleRegge
 #     "tag" => "a2Po-f2f2-PoPo_same-sign",
 #     "exchanges" => [1,4,5],
 #     "initial_pars" => [0.7, 11.0, 0.0],
+#     "s2_shift" => 30.0,
 #     "scale_α" => 0.8,
 # )
 
-# cesar model with f2/f2: opposite sign
+# # cesar model with f2/f2: opposite sign
+# settings = Dict(
+#     "system" => "compass_ηπ",
+#     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+#     "fitrange" => [2.4, 3.0],
+#     "t2" => -0.2,
+#     "tag" => "a2Po-f2f2-PoPo_opposite-sign",
+#     "exchanges" => [1,4,5],
+#     "initial_pars" => [0.7, -11.0, 0.0],
+#     "s2_shift" => 30.0,
+#     "scale_α" => 0.8,
+# )
+
+# bottom-Po model opposite sign
 settings = Dict(
     "system" => "compass_ηπ",
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
     "fitrange" => [2.4, 3.0],
     "t2" => -0.2,
-    "tag" => "a2Po-f2f2-PoPo_opposite-sign",
-    "exchanges" => [1,4,5],
-    "initial_pars" => [0.7, -11.0, 0.0],
+    "tag" => "a2Po-f2Po-PoPo_opposite-sign_s2shift",
+    "exchanges" => [1,3,5],
+    "initial_pars" => [0.7, -0.7, 0.0 ],
+    "s2_shift" => 30.0,
     "scale_α" => 0.8,
 )
 
@@ -78,7 +95,7 @@ fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges,settings["t2"], settings["scale_α"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift=settings["s2_shift"])
 intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars=pars))*q(m)
 
 function integrand(cosθ,ϕ,pars)
