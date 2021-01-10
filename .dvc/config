@@ -1,0 +1,5 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = webdavs://cernbox.cern.ch/cernbox/webdav/eos/user/m/mimikhas/BigData/dvc_remote
+    ask_password = true
