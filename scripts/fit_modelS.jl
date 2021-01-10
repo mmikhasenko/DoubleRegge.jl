@@ -81,19 +81,42 @@ using DoubleRegge
 #     "scale_α" => 0.8,
 # )
 # four-parameters fit
+# settings = Dict(
+#     "system" => "compass_ηπ",
+#     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+#     "fitrange" => [2.4, 3.0],
+#     "t2" => -0.2,
+#     "tag" => "a2Po-f2Po-a2f2-f2f2_opposite-sign",
+#     "exchanges" => [1,2,3,4],
+#     "initial_pars" => [0.7, 0.2, -0.7, -0.2],
+#     "s2_shift" => 0.0,
+#     "scale_α" => 0.8,
+# )
+# five-parameter fit
+# settings = Dict(
+#     "system" => "compass_ηπ",
+#     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
+#     "fitrange" => [2.4, 3.0],
+#     "t2" => -0.2,
+#     "tag" => "a2Po-f2Po-a2f2-f2f2-PoPo_opposite-sign",
+#     "exchanges" => [1,2,3,4,5],
+#     "initial_pars" => [0.3, 3.7, -0.2, -9.0, 0.0],
+#     "s2_shift" => 0.0,
+#     "scale_α" => 0.8,
+# )
+# 
 settings = Dict(
     "system" => "compass_ηπ",
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
     "fitrange" => [2.4, 3.0],
     "t2" => -0.2,
-    "tag" => "a2Po-f2Po-a2f2-f2f2_opposite-sign",
-    "exchanges" => [1,2,3,4],
-    "initial_pars" => [0.7, 0.2, -0.7, -0.2],
+    "tag" => "a2Po-f2Po-a2f2-f2f2-Pof2_opposite-sign",
+    "exchanges" => [1,2,3,4,6],
+    "initial_pars" => [0.3, 3.7, -0.2, -9.0, 0.0],
     "s2_shift" => 0.0,
     "scale_α" => 0.8,
 )
-
-
+#
 
 setsystem!(Symbol(settings["system"]))
 
