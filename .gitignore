@@ -20,7 +20,7 @@ plots/t2_dependence.pdf
 
 # Folders to ignore - files may be too large, too many, etc. NOTE: EDIT IF NEEDED.
 data/sims
-data/exp_raw
+dimas_toys
 videos
 _research
 
