@@ -15,42 +15,7 @@ using Plots
 import Plots.PlotMeasures.mm
 theme(:wong2; size=(500,350), bottom_margin=5mm)
 # 
-
 using DoubleRegge
-setsystem!(:compass_ηπ)
-
-
-#  _|_|_|  _|_|      _|_|    _|      _|    _|_|    
-#  _|    _|    _|  _|    _|  _|      _|  _|_|_|_|  
-#  _|    _|    _|  _|    _|    _|  _|    _|        
-#  _|    _|    _|    _|_|        _|        _|_|_|  
-
-# using StaticArrays
-# struct PartialWaveExpansion{N,T}
-#     Ls::SVector{N,Int}
-#     Ms::SVector{N,Int}
-#     # 
-#     As::SVector{N,T}
-#     # 
-#     function PartialWaveExpansion(intensities, phases, LMs)
-#         As = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(intensities, phases)]
-#         # 
-#         Ls = getproperty.(LMs,:L)
-#         Ms = getproperty.(LMs,:M)
-#         # 
-#         return new(Ls, Ms, As)
-#     end
-    
-# end
-
-# invensities(PWs::PartialWaveExpansion) = abs2.(PWs.As)
-# phases(PWs::PartialWaveExpansion) = arg.(PWs.As)
-# phases(PWs::PartialWaveExpansion, ref::Int) = arg.(PWs.As .* conj(PWs.As[ref]))
-
-# struct BinnedIndependentPWAnalysis{N,T}
-#     bincenters::Vector{Float64}
-#     expansions::Vector{PartialWaveExpansion{N,T}}
-# end
 
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
@@ -59,13 +24,13 @@ setsystem!(:compass_ηπ)
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
 # settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
+settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-a2f2-f2f2_opposite-sign", "fit-results_a2Po-f2Po-a2f2-f2f2_opposite-sign_Np=4_alpha=0.8.toml")
 ! isfile(settings_file) && error("no file")
 # 
 parsed = TOML.parsefile(settings_file)
-settings = parsed["settings"]
-fit_results = parsed["fit_results"]
+@unpack settings, fit_results = parsed
 # 
+setsystem!(Symbol(settings["system"]))
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
@@ -80,8 +45,8 @@ function pw_project_fixed_model(m)
     return pws
 end
 
-constrained_pw_projection_fixed_model(m, init_pars) =
-    constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, compass_ηπ_LMs)
+constrained_pw_projection_fixed_model(m, init_pars) = (@show m;
+    constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, compass_ηπ_LMs))
 #
 #
 # data
@@ -109,11 +74,17 @@ writedlm(joinpath("data", "exp_pro", "pws_$(settings["tag"]).txt"),
 @time cPWs_starting_from_pw = 
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, pw_projections)]
 writedlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_pw.txt"),
-    hcat(unfold.(cPWs_starting_from_pw)...))
+    hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
 #
+# cPWs_starting_from_pw
+v = readdlm(joinpath("data", "exp_pro", "constrained_pws_$(settings["tag"])_starting_from_pw.txt"))
+#     hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
+cPWs_starting_from_pw = [fold(v[i,:]) for i in 1:size(v,1)]
+
+# 
 pw_intensities = map(x->abs2.(x), pw_projections)
-cpw_intensities = map(x->abs2.(x), cPWs_starting_from_pw)
-# cpw_intensities′ = map(x->abs2.(x), cPWs_starting_from_compass_pw)
+# cpw_intensities = map(x->abs2.(x.pars), cPWs_starting_from_pw)
+cpw_intensities = map(x->abs2.(x), [fold(v[i,:]) for i in 1:size(v,1)])
 
 
 let
@@ -133,11 +104,12 @@ end
 
 phase_with_resp2(x) = arg.(x .* conj(x[2]))
 pw_phases = map(phase_with_resp2, pw_projections)
-cpw_phases = map(phase_with_resp2, cPWs_starting_from_pw)
+cpw_phases = map(phase_with_resp2, getproperty.(cPWs_starting_from_pw, :pars))
 # cpw_phases′ = map(phase_with_resp2, cPWs_starting_from_compass_pw)
 
 function shift(L,M) 
     (L,M) == (1,1) && return 2π
+    (L,M) == (3,1) && return 2π
     return 0.0
 end
 
