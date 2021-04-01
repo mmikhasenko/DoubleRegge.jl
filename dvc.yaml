@@ -1,0 +1,17 @@
+stages:
+  fit:
+    cmd: '"C:\\Users\\mikha\\AppData\\Local\\Programs\\Julia 1.5.0\\bin\\julia.exe"
+      fit.jl fit_settings.toml'
+    wdir: pipeline
+    deps:
+    - fit_settings.toml
+    outs:
+    - fit_results.toml
+  presentation:
+    cmd: '"C:\\Users\\mikha\\AppData\\Local\\Programs\\Julia 1.5.0\\bin\\julia.exe"
+      plot_metrics.jl fit_results.toml'
+    wdir: pipeline
+    deps:
+    - fit_results.toml
+    outs:
+    - plots\\
