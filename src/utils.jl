@@ -1,5 +1,7 @@
 inlims(x,lims) = lims[1] ≤ x ≤ lims[2]
 
+(..)(x::AbstractArray,i...) = getindex.(x,i...)
+(..)(x::AbstractArray,i::Symbol) = getfield.(x,i)
 
 
 function mysum(t::T where T<:Type, itrs::Base.Generator)
@@ -9,3 +11,6 @@ function mysum(t::T where T<:Type, itrs::Base.Generator)
     end
     return v
 end 
+
+plotsfolder(tag...) = joinpath("plots", tag...)
+fitsfolder( tag...) = joinpath("data", "exp_pro", tag...)

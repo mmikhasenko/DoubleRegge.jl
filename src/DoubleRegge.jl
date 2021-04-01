@@ -56,6 +56,8 @@ export bootstrap_band, slice
 include("bootstrap.jl")
 
 export inlims
+export ..
+export plotsfolder, fitsfolder
 include("utils.jl")
 
 export constrained_pw_projection
