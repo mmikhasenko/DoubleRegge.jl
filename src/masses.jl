@@ -17,13 +17,19 @@
     m2::Float64 = -1.0
 end
 
-const compass_ηπ  = let
+const compass_ηπ = let
     mπ = 0.13957018; mπ2 = mπ^2;
     mη = 0.54751; mη2 = mη^2;
     mp = 0.93827203;   mp2 = mp^2;
     TwoParticleDiffraction(mb = mπ, mt=mp, mr=mp, m1=mη, m2=mπ)
 end
-# const compass_η′π = TwoParticleDiffraction(mb = mπ, mt=mp, mr=pm, m1=mη′, m2=mπ)
+const compass_η′π = let
+    mπ = 0.13957018; mπ2 = mπ^2;
+    mη = 0.54751; mη2 = mη^2;
+    mp = 0.93827203;   mp2 = mp^2;
+    mη′ = 0.95778; mη′2 = mη′^2
+    TwoParticleDiffraction(mb = mπ, mt=mp, mr=mp, m1=mη′, m2=mπ)
+end
 
 mutable struct setup
     system::TwoParticleDiffraction
@@ -33,10 +39,15 @@ end
 const G = setup(TwoParticleDiffraction(), 0.0)
 
 setsystem!(tpd::TwoParticleDiffraction, s0::T where T<:Real) = (G.system = tpd; G.s0 = s0)
+#
+const compass_Eb = 190
+const compass_mb = 0.93827203
+const compass_s0 = compass_mb^2 + 2*compass_mb*compass_Eb
 # 
 function setsystem!(s::Symbol)
-    s == :compass_ηπ  && setsystem!(compass_ηπ, 0.93827203^2 + 2*0.93827203*190)
-    # s == :compass_η′π && setsystem!(compass_η′π, 0.93827203^2 + 2*0.93827203*190)
+    s == :compass_ηπ  && setsystem!(compass_ηπ, compass_s0)
+    s == :compass_η′π && setsystem!(compass_η′π, compass_s0)
+    return
 end
 
 #    _|_|_|  _|    _|    _|_|_|    _|_|_|  _|  _|_|  
