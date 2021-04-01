@@ -12,7 +12,8 @@ using LinearAlgebra
 using Cuba
 using SpecialFunctions
 using Optim
-
+using Measurements
+using TypedTables
 
 export TwoParticleDiffraction
 export setsystem!
@@ -29,8 +30,10 @@ export compass_ηπ_LMs
 export pw_project
 include("LMbasis.jl")
 
-export x_IδI_ϕδϕ_compass_ηπ
-export randA
+import Base: rand
+export path_ηπ, path_η′π
+export description_ηπ, description_η′π
+export read_data
 include("dataIO.jl")
 
 export broadcast_over_tree

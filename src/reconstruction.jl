@@ -1,20 +1,28 @@
 
+
 recamp(cosθ,ϕ,amps,LMs) =
     sum(a*Psi(L,M,cosθ,ϕ) for
     (a, (L, M)) in zip(amps,LMs))
 #
-function dNdcosθ(cosθ; amps, LMs)
-    list_of_all = collect(zip(amps,LMs))
+recamp(cosθ,ϕ, expansion::TwoBodyPartialWaves{N,Complex{V}} where N where V) =
+    recamp(cosθ, ϕ, expansion.PWs, expansion.LMs)
+# 
+amplitude(I,ϕ) = sqrt(I) * cis(ϕ) 
+amplitude(; I,ϕ) = amplitude(I,ϕ)
+# 
+function dNdcosθ(cosθ, expansion)
+    list_of_all = collect(zip(expansion.PWs,expansion.LMs))
     # M=1
-    l1 = filter(x->x[2].M==1, list_of_all)
-    l2 = filter(x->x[2].M==2, list_of_all)
+    l1 = filter(x->x[2][2]==1, list_of_all)
+    l2 = filter(x->x[2][2]==2, list_of_all)
     v = abs2(sum(a*Psi(L,M,cosθ,π/2) for (a, (L, M)) in l1)) +
         abs2(sum(a*Psi(L,M,cosθ,π/4) for (a, (L, M)) in l2))
     v *= π
     return v
 end
 #
-dNdϕ(ϕ; amps, cosθlims::Tuple{Real,Real}=(-1,1), LMs) = quadgk(cosθ->abs2(recamp(cosθ,ϕ,amps,LMs)), cosθlims...)[1]
+dNdϕ(ϕ, expansion; cosθlims::Tuple{Real,Real}=(-1,1), LMs) =
+    quadgk(cosθ->abs2(recamp(cosθ,ϕ,expansion)), cosθlims...)[1]
 
 function integrate_dcosθdϕ(g, cosθlims=(-1,1), ϕlims=(-π+0.31,π+0.31); dims::Int=1)
     integration = cuhre((x,f)->f[:] .= g(
