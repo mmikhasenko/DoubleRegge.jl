@@ -14,3 +14,24 @@ end
 
 plotsfolder(tag...) = joinpath("plots", tag...)
 fitsfolder( tag...) = joinpath("data", "exp_pro", tag...)
+
+
+# phase alignment
+function shiftbyperiod(Δ; period=2π)
+    Nfull = div(Δ, period)
+    Nhalfs = div(Δ-period*Nfull, period/2)
+    # 
+    -period * (Nfull + Nhalfs)
+end
+shiftbyperiod(el, pref; period=2π) = shiftbyperiod(el-pref; period=2π)
+# 
+meanshiftbyperiod(phases, ref) = phases .+ shiftbyperiod(mean(phases)-ref)
+
+
+function alignperiodicsequence(v::Vector; period=2π)
+    vc = copy(v)
+    for i in 2:length(vc)
+        vc[i] += shiftbyperiod(vc[i], vc[i-1]; period=period)
+    end
+    return vc
+end

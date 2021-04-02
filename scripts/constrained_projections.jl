@@ -80,7 +80,6 @@ writedlm(fitsfolder(tag,"cPWs.txt"),
     hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
 #
 
-                                                                   
 #            _|              _|      _|      _|                      
 #  _|_|_|    _|    _|_|    _|_|_|_|_|_|_|_|      _|_|_|      _|_|_|  
 #  _|    _|  _|  _|    _|    _|      _|      _|  _|    _|  _|    _|  
@@ -89,55 +88,76 @@ writedlm(fitsfolder(tag,"cPWs.txt"),
 #  _|                                                            _|  
 #  _|                                                        _|_|    
 
-v = readdlm(fitsfolder(tag,"cPWs.txt"))
-#     hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
-cPWs_starting_from_pw = [fold(v[i,:]) for i in 1:size(v,1)]
 
+function read_PW_matrices(filename, LMs)
+    matrix = readdlm(filename)
+    # 
+    amplitudevectors = [fold(matrix[:,i]) for i in 1:size(matrix,2)]
+    return TwoBodyPartialWaves.(Ref(LMs), amplitudevectors)
+end
+
+PWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs); iref=2)
+cPWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs); iref=2)
 # 
-pw_intensities = map(x->abs2.(x), pw_projections)
-cpw_intensities = map(x->abs2.(x.pars), cPWs_starting_from_pw)
-cpw_intensities = map(x->abs2.(x), [fold(v[i,:]) for i in 1:size(v,1)])
+data_intensities = [(((plotdata.Iϕ)..:PWs)..i)..:I for i in 1:length(used_LMs)]
+pw_intensities = [((PWs..:PWs)..i)..:I for i in 1:length(used_LMs)]
+cpw_intensities = [((cPWs..:PWs)..i)..:I for i in 1:length(used_LMs)]
 
-
-
-# getindex.((plotdata.Iϕ..:PWs), :I)
 let
-    plot(layout=grid(3,3), size=(900,900))
+    N = 3
+    M = div(length(used_LMs)-1,3)+1
+    plot(layout=grid(M,N), size=(300*N,300*M))
+    # 
     for (i,(L,M)) in enumerate(used_LMs)
-        scatter!(sp=i, plotdata.x, [p.Iϕ.PWs[i].I for p in plotdata],
+        scatter!(sp=i, plotdata.x, data_intensities[i],
             xerr=(plotdata.x[2]-plotdata.x[1])/2,
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        plot!(sp=i, plotdata.x, getindex.(pw_intensities,i), lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, plotdata.x, getindex.(cpw_intensities,i), lab=i!=1 ? "" : "cPW projection", l=(2))
-        vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
-    end
-    plot!(xlab="m(ηπ) (GeV)")
-end
-
-phase_with_resp2(x) = arg.(x .* conj(x[2]))
-pw_phases = map(phase_with_resp2, pw_projections)
-cpw_phases = map(phase_with_resp2, getproperty.(cPWs_starting_from_pw, :pars))
-# cpw_phases′ = map(phase_with_resp2, cPWs_starting_from_compass_pw)
-
-function shift(L,M) 
-    (L,M) == (1,1) && return 2π
-    (L,M) == (3,1) && return 2π
-    return 0.0
-end
-
-let
-    plot(layout=grid(3,3), size=(900,900))
-    for (i,(L,M)) in enumerate(used_LMs)
-        scatter!(sp=i, plotdata.x, [p.Iϕ.PWs[i].ϕ for p in plotdata],
-            xerr=(plotdata.x[2]-plotdata.x[1])/2,
-            c=:black, title="LM=$L$M", ms=3,
-            lab=i!=1 ? "" : "data",)
-        #
-        plot!(sp=i, plotdata.x, getindex.(pw_phases,i) .+ shift(L,M), lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, plotdata.x, getindex.(cpw_phases,i), lab=i!=1 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, plotdata.x, pw_intensities[i], lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, plotdata.x, cpw_intensities[i], lab=i!=1 ? "" : "cPW projection", l=(2))
         # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
+
+data_phases = [[p.Iϕ.PWs[i].ϕ for p in plotdata] for i in 1:length(used_LMs)]
+data_phases_adj = meanshiftbyperiod.(data_phases, 0)
+# 
+pw_phases = alignperiodicsequence.([((PWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
+pw_phases_adj = meanshiftbyperiod.(pw_phases, mean.(data_phases_adj)..:val)
+# 
+cpw_phases = alignperiodicsequence.([((cPWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
+cpw_phases_adj = meanshiftbyperiod.(cpw_phases, mean.(data_phases_adj)..:val)
+
+let
+    N = 3
+    M = div(length(used_LMs)-1,3)+1
+    plot(layout=grid(M,N), size=(300*N,300*M))
+    # 
+    for (i,(L,M)) in enumerate(used_LMs)
+        scatter!(sp=i, plotdata.x, data_phases_adj[i],
+            xerr=(plotdata.x[2]-plotdata.x[1])/2,
+            c=:black, title="LM=$L$M", ms=3,
+            lab=i!=1 ? "" : "data",)
+        #
+        plot!(sp=i, plotdata.x, pw_phases_adj[i], lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, plotdata.x, cpw_phases_adj[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+        # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
+    end
+    plot!(xlab="m(ηπ) (GeV)")
+end
+
+writedlm(fitsfolder(tag,"data_ajusted.txt"),
+    hcat(plotdata.x,
+        hcat(data_intensities...)..:val,
+        hcat(data_intensities...)..:err,
+        hcat(data_phases_adj...)..:val,
+        hcat(data_phases_adj...)..:err))
+# 
+writedlm(fitsfolder(tag,"pw_ajusted.txt"),
+    hcat(plotdata.x,
+        hcat(pw_intensities...),
+        hcat(cpw_intensities...),
+        hcat(pw_phases_adj...),
+        hcat(cpw_phases_adj...)))

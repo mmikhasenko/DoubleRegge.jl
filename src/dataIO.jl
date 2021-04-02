@@ -5,7 +5,12 @@ end
 
 TwoBodyPartialWaves(LMs::Vector, PWs::Vector) =
     (N=length(LMs); TwoBodyPartialWaves(SVector{N}(LMs), SVector{N}(PWs)))
-
+#
+changerepresentation(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}} where N where V) =
+    TwoBodyPartialWaves(expansion.LMs, map(x->amplitude(x.I, x.ϕ), expansion.PWs))
+changerepresentation(expansion::TwoBodyPartialWaves{N, V} where N where V <: Number; iref=1) =
+    TwoBodyPartialWaves(expansion.LMs, Iϕ.(expansion.PWs; ref=expansion.PWs[iref]))
+# 
 
 function read_data(pathtodata, description)
     LMs = getindex.(description,1)
@@ -31,13 +36,13 @@ function read_data(pathtodata, description)
     #
     Iϕ = [TwoBodyPartialWaves(LMs, NamedTuple{(:I,:ϕ)}.(zip(Im[i,:], ϕm[i,:])))
         for i in 1:Nbins]
-    A = [TwoBodyPartialWaves(expansion.LMs,
-                             map(x->amplitude(x.I.val, x.ϕ.val), expansion.PWs))
-            for expansion in Iϕ]
+    #
+    droperr(expansion) = TwoBodyPartialWaves(expansion.LMs, getproperty.(expansion.PWs, :val))
+    # 
+    A = droperr.(changerepresentation.(Iϕ))
+    # 
     Table(x=x, Iϕ = Iϕ, amps = A)
 end
-
-typeof((z=1±2,))
 
 
 rand(v::Measurement{T} where T) = v.val + randn()*v.err

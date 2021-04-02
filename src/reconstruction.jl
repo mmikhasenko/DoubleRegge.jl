@@ -1,14 +1,15 @@
-
-
+arg(z) = atan(imag(z), real(z))
+#
+amplitude(I,ϕ) = sqrt(I) * cis(ϕ) 
+amplitude(; I,ϕ) = amplitude(I,ϕ)
+Iϕ(A; ref=1.0) = NamedTuple{(:I,:ϕ)}((abs2(A),arg(A*ref')))
+# 
 recamp(cosθ,ϕ,amps,LMs) =
     sum(a*Psi(L,M,cosθ,ϕ) for
     (a, (L, M)) in zip(amps,LMs))
 #
 recamp(cosθ,ϕ, expansion::TwoBodyPartialWaves{N,Complex{V}} where N where V) =
     recamp(cosθ, ϕ, expansion.PWs, expansion.LMs)
-# 
-amplitude(I,ϕ) = sqrt(I) * cis(ϕ) 
-amplitude(; I,ϕ) = amplitude(I,ϕ)
 # 
 function dNdcosθ(cosθ, expansion)
     list_of_all = collect(zip(expansion.PWs,expansion.LMs))
