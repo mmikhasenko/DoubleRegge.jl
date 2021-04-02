@@ -19,7 +19,7 @@ using DoubleRegge
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -30,6 +30,9 @@ parsed = TOML.parsefile(settings_file)
 
 # 
 setsystem!(Symbol(settings["system"]))
+description = settings["system"] == "compass_ηπ" ? description_ηπ :
+                (settings["system"] == "compass_η′π" ? description_η′π :
+                    error("unknown system $(settings["system"])"))
 
 
 # build model
@@ -40,7 +43,6 @@ const model = build_model(
 const fixed_pars = fit_results["fit_minimizer"]
 fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
 intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m)
-
 
 # get data
 data = read_data(settings["pathtodata"], description)
@@ -88,7 +90,7 @@ writedlm(fitsfolder(tag,"cPWs.txt"),
 #  _|                                                            _|  
 #  _|                                                        _|_|    
 
-
+readdlm(fitsfolder(tag,"PWs.txt"))
 function read_PW_matrices(filename, LMs)
     matrix = readdlm(filename)
     # 
@@ -147,7 +149,7 @@ let
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
-
+# 
 writedlm(fitsfolder(tag,"data_ajusted.txt"),
     hcat(plotdata.x,
         hcat(data_intensities...)..:val,

@@ -37,13 +37,15 @@ function read_data(pathtodata, description)
     Iϕ = [TwoBodyPartialWaves(LMs, NamedTuple{(:I,:ϕ)}.(zip(Im[i,:], ϕm[i,:])))
         for i in 1:Nbins]
     #
-    droperr(expansion) = TwoBodyPartialWaves(expansion.LMs, getproperty.(expansion.PWs, :val))
+    droperr(expansion) = TwoBodyPartialWaves(expansion.LMs,
+        getproperty.(real.(expansion.PWs), :val) .+ 1im .*
+        getproperty.(imag.(expansion.PWs), :val))
     # 
     A = droperr.(changerepresentation.(Iϕ))
     # 
     Table(x=x, Iϕ = Iϕ, amps = A)
 end
-
+1±1 + 1im*(1±1)
 
 rand(v::Measurement{T} where T) = v.val + randn()*v.err
 function rand(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),Tuple{Measurement{V},Measurement{V}}}} where N where V)
