@@ -45,7 +45,7 @@ function read_data(pathtodata, description)
     # 
     Table(x=x, Iϕ = Iϕ, amps = A)
 end
-1±1 + 1im*(1±1)
+
 
 rand(v::Measurement{T} where T) = v.val + randn()*v.err
 function rand(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),Tuple{Measurement{V},Measurement{V}}}} where N where V)
@@ -53,6 +53,7 @@ function rand(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),Tuple{Measur
     ϕ′ = rand.(expansion.PWs..:ϕ)
     TwoBodyPartialWaves(expansion.LMs, NamedTuple{(:I,:ϕ)}.(zip(I′,ϕ′)))
 end
+
 # function randA(data)
 #     randI = [abs.(I .+ randn(length(δI)) .* δI) for (I, δI) in zip(data.I, data.δI)]
 #     randϕ = [abs.(ϕ .+ randn(length(δϕ)) .* δϕ) for (ϕ, δϕ) in zip(data.ϕ, data.δϕ)]

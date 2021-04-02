@@ -55,7 +55,6 @@ plotdata = filter(data) do x
     inlims(x.x, (2.4,3.0))
 end
 
-
 # 
 const used_LMs = Array(data[1].Iϕ.LMs)
 function pw_project_fixed_model(m)
