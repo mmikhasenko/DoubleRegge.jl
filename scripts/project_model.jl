@@ -8,41 +8,54 @@ using Cuba
 using Plots
 import Plots.PlotMeasures.mm
 theme(:wong2; size=(500,350), bottom_margin=5mm)
+# 
 using LaTeXStrings
 # 
 using DoubleRegge
-setsystem!(:compass_ηπ)
 # 
 using Statistics
 using LinearAlgebra
 
-#                            _|            
-#    _|_|_|    _|_|      _|_|_|    _|_|    
-#  _|        _|    _|  _|    _|  _|_|_|_|  
-#  _|        _|    _|  _|    _|  _|        
-#    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_same-sign", "fit-results_a2Po-f2Po-PoPo_same-sign_Np=3_alpha=0.8.toml")
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign", "fit-results_a2Po-f2Po-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2f2-PoPo_opposite-sign", "fit-results_a2Po-f2f2-PoPo_opposite-sign_Np=3_alpha=0.8.toml")
-# settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-PoPo_opposite-sign_s2shift", "fit-results_a2Po-f2Po-PoPo_opposite-sign_s2shift_Np=3_alpha=0.8.toml")
-settings_file = joinpath("data", "exp_pro", "a2Po-f2Po-a2f2-f2f2_opposite-sign", "fit-results_a2Po-f2Po-a2f2-f2f2_opposite-sign_Np=4_alpha=0.8.toml")
-! isfile(settings_file) && error("no file")
+# # # # # # # # # # # # # # # # # # # # 
 # 
+tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+# 
+# # # # # # # # # # # # # # # # # # # # 
+
+
+# 
+settings_file = fitsfolder(tag, "fit-results.toml")
+! isfile(settings_file) && error("no file")
 parsed = TOML.parsefile(settings_file)
-settings = parsed["settings"]
-fit_results = parsed["fit_results"]
-const pfr = fit_results["fit_minimizer"]
+@unpack settings, fit_results = parsed
 
 # 
 setsystem!(Symbol(settings["system"]))
 
-# fit
-const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift=settings["s2_shift"])
-fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
+
+# build model
+const model = build_model(
+    sixexchages[settings["exchanges"]],
+    settings["t2"],
+    settings["scale_α"])
+const fixed_pars = fit_results["fit_minimizer"]
+fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
 fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
-intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m)
+
+# get data
+data = read_data(settings["pathtodata"], description)
+# fit range
+fitdata = filter(data) do x
+    inlims(x.x, settings["fitrange"])
+end
+# plot 
+plotdata = filter(data) do x
+    inlims(x.x, (2.4,3.0))
+end
+
+
 # 
 function pw_project_fixed(m::Float64,L,M)
     amplitude(cosθ,ϕ) = fixed_model_sqrtq(m,cosθ,ϕ)

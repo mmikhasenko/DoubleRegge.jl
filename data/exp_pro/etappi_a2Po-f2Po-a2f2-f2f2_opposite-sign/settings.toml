@@ -1,0 +1,7 @@
+exchanges = [1, 2, 3, 4]
+pathtodata = "data\\exp_raw\\PLB_shifted"
+t2 = -0.2
+fitrange = [2.4, 3.0]
+initial_pars = [0.3, 3.7, -0.2, -9.0]
+system = "compass_η′π"
+"scale_α" = 0.8
