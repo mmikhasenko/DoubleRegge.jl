@@ -90,18 +90,18 @@ end
 #  _|  _|    _|    _|      _|        _|    _|      _|_|  
 #  _|  _|    _|      _|_|    _|_|_|  _|    _|  _|_|_|    
 
-pw_projections = pw_project_fixed_model.(plotdata.x)
+pull_mpoints = morefrequentrange(plotdata.x, 5)
+# 
+pw_projections = pw_project_fixed_model.(pull_mpoints)
 writedlm(fitsfolder(tag,"PWs.txt"), hcat(unfold.(pw_projections)...))
 
 @time cPWs_starting_from_pw = 
-    [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(plotdata.x, pw_projections)]
+    [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(pull_mpoints, pw_projections)]
 writedlm(fitsfolder(tag,"cPWs.txt"),
     hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
 #
 
 # ambibuities
-pull_mpoints = morefrequentrange(plotdata.x, 2)
-# 
 @time cpw_forward  = pull_through_forward( pull_mpoints)
 writedlm(fitsfolder(tag,"cPWs_forward.txt"),
     hcat(unfold.(getproperty.(cpw_forward, :pars))...))
@@ -128,10 +128,14 @@ end
 
 PWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs); iref=2)
 cPWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs); iref=2)
+cPWs_f = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs_forward.txt"), used_LMs); iref=2)
+cPWs_b = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs_backward.txt"), used_LMs); iref=2)
 # 
 data_intensities = [(((plotdata.Iϕ)..:PWs)..i)..:I for i in 1:length(used_LMs)]
-pw_intensities = [((PWs..:PWs)..i)..:I for i in 1:length(used_LMs)]
-cpw_intensities = [((cPWs..:PWs)..i)..:I for i in 1:length(used_LMs)]
+pw_intensities = [((PWs..:PWs)..i)..:I for i in 1:length(PWs[1].LMs)]
+cpw_intensities = [((cPWs..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
+cpw_f_intensities = [((cPWs_f..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
+cpw_b_intensities = [((cPWs_b..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
 
 let
     N = 3
@@ -145,11 +149,16 @@ let
             lab=i!=1 ? "" : "data",)
         #
         plot!(sp=i, plotdata.x, pw_intensities[i], lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, plotdata.x, cpw_intensities[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, pull_mpoints, cpw_intensities[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+        # 
+        plot!(sp=i, pull_mpoints, cpw_f_intensities[i], lab="", l=(1,:gray))
+        plot!(sp=i, pull_mpoints, cpw_b_intensities[i], lab="", l=(1,:gray))
         # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
+
+
 
 data_phases = [[p.Iϕ.PWs[i].ϕ for p in plotdata] for i in 1:length(used_LMs)]
 data_phases_adj = meanshiftbyperiod.(data_phases, 0)
@@ -159,6 +168,12 @@ pw_phases_adj = meanshiftbyperiod.(pw_phases, mean.(data_phases_adj)..:val)
 # 
 cpw_phases = alignperiodicsequence.([((cPWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
 cpw_phases_adj = meanshiftbyperiod.(cpw_phases, mean.(data_phases_adj)..:val)
+# 
+cpw_f_phases = alignperiodicsequence.([((cPWs_f..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
+cpw_f_phases_adj = meanshiftbyperiod.(cpw_f_phases, mean.(data_phases_adj)..:val)
+# 
+cpw_b_phases = alignperiodicsequence.([((cPWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
+cpw_b_phases_adj = meanshiftbyperiod.(cpw_b_phases, mean.(data_phases_adj)..:val)
 
 let
     N = 3
@@ -173,6 +188,9 @@ let
         #
         plot!(sp=i, plotdata.x, pw_phases_adj[i], lab=i!=1 ? "" : "PW projection", l=(2))
         plot!(sp=i, plotdata.x, cpw_phases_adj[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+        #
+        plot!(sp=i, pull_mpoints, cpw_f_phases_adj[i], lab="", l=(1,:gray))
+        plot!(sp=i, pull_mpoints, cpw_b_phases_adj[i], lab="", l=(1,:gray))
         # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
     plot!(xlab="m(ηπ) (GeV)")
