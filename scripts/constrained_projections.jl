@@ -65,6 +65,24 @@ end
 constrained_pw_projection_fixed_model(m, init_pars) = (@show m;
     constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, used_LMs))
 
+# forward
+function pull_through_forward(mpoints)
+    x1 = mpoints[1]
+    first_init_pars = pw_project_fixed_model(x1)
+    cpw = [constrained_pw_projection_fixed_model(x1, first_init_pars)]
+    for x in mpoints[2:end]
+        cpwi = constrained_pw_projection_fixed_model(x, cpw[end].pars)
+        push!(cpw, cpwi)
+    end
+    return cpw
+end
+# backward
+pull_through_backward(mpoints) = reverse(pull_through_forward(reverse(mpoints)))
+#
+function morefrequentrange(values, factor)
+    len = factor*(length(values)-1)+1
+    return range(values[1], values[end], length=len)
+end
 
 #  _|              _|                                    
 #      _|_|_|    _|_|_|_|    _|_|    _|_|_|      _|_|_|  
@@ -80,6 +98,17 @@ writedlm(fitsfolder(tag,"PWs.txt"), hcat(unfold.(pw_projections)...))
 writedlm(fitsfolder(tag,"cPWs.txt"),
     hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
 #
+
+# ambibuities
+pull_mpoints = morefrequentrange(plotdata.x, 2)
+# 
+@time cpw_forward  = pull_through_forward( pull_mpoints)
+writedlm(fitsfolder(tag,"cPWs_forward.txt"),
+    hcat(unfold.(getproperty.(cpw_forward, :pars))...))
+# 
+@time cpw_backward = pull_through_backward(pull_mpoints)
+writedlm(fitsfolder(tag,"cPWs_backward.txt"),
+    hcat(unfold.(getproperty.(cpw_backward, :pars))...))
 
 #            _|              _|      _|      _|                      
 #  _|_|_|    _|    _|_|    _|_|_|_|_|_|_|_|      _|_|_|      _|_|_|  

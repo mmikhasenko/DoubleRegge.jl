@@ -57,16 +57,7 @@ function pull_through_forward(mpoints)
     return cpw
 end
 # backward
-function pull_through_backward(mpoints)
-    x1 = mpoints[end]
-    first_init_pars = pw_project_fixed_model(x1)
-    cpw = [constrained_pw_projection_fixed_model(x1, first_init_pars)]
-    for x in reverse(mpoints[1:end-1])
-        cpwi = constrained_pw_projection_fixed_model(x, cpw[end].pars)
-        push!(cpw, cpwi)
-    end
-    return reverse(cpw)
-end
+pull_through_backward(mpoints) = reverse(pull_through_forward(reverse(mpoints)))
 
 # data
 const LMs = compass_ηπ_LMs
