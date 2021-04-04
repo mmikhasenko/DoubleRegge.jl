@@ -118,7 +118,6 @@ writedlm(fitsfolder(tag,"cPWs_backward.txt"),
 #  _|                                                            _|  
 #  _|                                                        _|_|    
 
-readdlm(fitsfolder(tag,"PWs.txt"))
 function read_PW_matrices(filename, LMs)
     matrix = readdlm(filename)
     # 
@@ -148,7 +147,7 @@ let
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        plot!(sp=i, plotdata.x, pw_intensities[i], lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, pull_mpoints, pw_intensities[i], lab=i!=1 ? "" : "PW projection", l=(2))
         plot!(sp=i, pull_mpoints, cpw_intensities[i], lab=i!=1 ? "" : "cPW projection", l=(2))
         # 
         plot!(sp=i, pull_mpoints, cpw_f_intensities[i], lab="", l=(1,:gray))
@@ -157,7 +156,6 @@ let
     end
     plot!(xlab="m(ηπ) (GeV)")
 end
-
 
 
 data_phases = [[p.Iϕ.PWs[i].ϕ for p in plotdata] for i in 1:length(used_LMs)]
@@ -186,8 +184,8 @@ let
             c=:black, title="LM=$L$M", ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        plot!(sp=i, plotdata.x, pw_phases_adj[i], lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, plotdata.x, cpw_phases_adj[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+        plot!(sp=i, pull_mpoints, pw_phases_adj[i], lab=i!=1 ? "" : "PW projection", l=(2))
+        plot!(sp=i, pull_mpoints, cpw_phases_adj[i], lab=i!=1 ? "" : "cPW projection", l=(2))
         #
         plot!(sp=i, pull_mpoints, cpw_f_phases_adj[i], lab="", l=(1,:gray))
         plot!(sp=i, pull_mpoints, cpw_b_phases_adj[i], lab="", l=(1,:gray))
