@@ -14,6 +14,7 @@ using SpecialFunctions
 using Optim
 using Measurements
 using TypedTables
+using Polynomials
 
 export TwoParticleDiffraction
 export setsystem!
@@ -70,5 +71,8 @@ export constrained_pw_projection
 export constrained_pw_projection_with_derivative
 export fold, unfold
 include("constrainedpw.jl")
+
+export bartlettambiguities
+include("bartlett_ambiguities.jl")
 
 end  # module DoubleRegge
