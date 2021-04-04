@@ -14,8 +14,59 @@ using Cuba
 using Plots
 import Plots.PlotMeasures.mm
 theme(:wong2; size=(500,350), bottom_margin=5mm)
+using LaTeXStrings
 # 
 using DoubleRegge
+
+
+#                                _|                      
+#  _|  _|_|    _|_|      _|_|_|      _|_|_|      _|_|    
+#  _|_|      _|_|_|_|  _|        _|  _|    _|  _|_|_|_|  
+#  _|        _|        _|        _|  _|    _|  _|        
+#  _|          _|_|_|    _|_|_|  _|  _|_|_|      _|_|_|  
+#                                    _|                  
+#                                    _|                  
+
+function intensity(PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V, i::Integer)
+    (((PWs)..:PWs)..i)..:I
+end
+function phase(PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V, i::Integer)
+    phases = alignperiodicsequence(((PWs..:PWs)..i)..:ϕ)
+    phases_adj = meanshiftbyperiod(phases)
+end
+
+@recipe function f(x, PWs::Vector{TwoBodyPartialWaves{N, V}} where N where V <: Number,
+    what::Symbol, i::Integer; iref=2)
+    PWsIϕ = changerepresentation.(PWs; iref=iref)
+    (x,PWsIϕ,what,i)
+end
+
+@recipe function f(x, PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V,
+    what::Symbol, i::Integer)
+    y = []
+    label --> ""
+    L,M = PWs[1].LMs[i]
+    title --> "LM=$L$M"
+    if what == :I
+        intensities = intensity(PWs, i)
+        y = intensities
+    end
+    if what == :ϕ
+        phases_adj = phase(PWs, i)
+        if mean(phases_adj) < π/2
+            phases_adj .+= 2π
+        end
+        y = phases_adj .* (180/π)
+    end
+    (x,y)
+end
+
+#                            _|            
+#    _|_|_|    _|_|      _|_|_|    _|_|    
+#  _|        _|    _|  _|    _|  _|_|_|_|  
+#  _|        _|    _|  _|    _|  _|        
+#    _|_|_|    _|_|      _|_|_|    _|_|_|  
+
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
@@ -30,9 +81,18 @@ parsed = TOML.parsefile(settings_file)
 
 # 
 setsystem!(Symbol(settings["system"]))
-description = settings["system"] == "compass_ηπ" ? description_ηπ :
-                (settings["system"] == "compass_η′π" ? description_η′π :
-                    error("unknown system $(settings["system"])"))
+description = Dict()
+xlab = ""
+
+if settings["system"] == "compass_ηπ"
+    description = description_ηπ
+    xlab = L"m_{\eta\pi}\,\,(\mathrm{GeV})"
+elseif settings["system"] == "compass_η′π"
+    description = description_η′π
+    xlab = L"m_{\eta'\pi}\,\,(\mathrm{GeV})"
+else
+    error("unknown system $(settings["system"])")
+end
 
 
 # build model
@@ -110,6 +170,7 @@ writedlm(fitsfolder(tag,"cPWs_forward.txt"),
 writedlm(fitsfolder(tag,"cPWs_backward.txt"),
     hcat(unfold.(getproperty.(cpw_backward, :pars))...))
 
+
 #            _|              _|      _|      _|                      
 #  _|_|_|    _|    _|_|    _|_|_|_|_|_|_|_|      _|_|_|      _|_|_|  
 #  _|    _|  _|  _|    _|    _|      _|      _|  _|    _|  _|    _|  
@@ -125,85 +186,94 @@ function read_PW_matrices(filename, LMs)
     return TwoBodyPartialWaves.(Ref(LMs), amplitudevectors)
 end
 
-PWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs); iref=2)
-cPWs = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs); iref=2)
-cPWs_f = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs_forward.txt"), used_LMs); iref=2)
-cPWs_b = changerepresentation.(read_PW_matrices(fitsfolder(tag,"cPWs_backward.txt"), used_LMs); iref=2)
-# 
-data_intensities = [(((plotdata.Iϕ)..:PWs)..i)..:I for i in 1:length(used_LMs)]
-pw_intensities = [((PWs..:PWs)..i)..:I for i in 1:length(PWs[1].LMs)]
-cpw_intensities = [((cPWs..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
-cpw_f_intensities = [((cPWs_f..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
-cpw_b_intensities = [((cPWs_b..:PWs)..i)..:I for i in 1:length(cPWs[1].LMs)]
+
+PWs = read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs)
+cPWs = read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs)
+cPWs_f = read_PW_matrices(fitsfolder(tag,"cPWs_forward.txt"), used_LMs)
+cPWs_b = read_PW_matrices(fitsfolder(tag,"cPWs_backward.txt"), used_LMs)
+#
+
+function ambiguousPWs(PWs::TwoBodyPartialWaves{N, V} where N where V <: Number)
+    L1_indices = used_LMs..2 .== 1
+    ba = bartlettambiguities(PWs.PWs[L1_indices])
+    return [TwoBodyPartialWaves(Vector(PWs.LMs),
+        [L1_indices[i] ? a[sum(L1_indices[1:i])] : PWs.PWs[i] for i in 1:length(used_LMs)])
+        for a in ba]
+    #
+    
+end
+reorder(vecofvec) = [getindex.(vecofvec,i) for i in 1:length(vecofvec[1])]
+
+cPWs_all = reorder(ambiguousPWs.(cPWs_f))
 
 let
     N = 3
     M = div(length(used_LMs)-1,3)+1
-    plot(layout=grid(M,N), size=(300*N,300*M))
+    plot(layout=grid(M,N), size=(300*N,300*M), frame=:box, grid=false, ylim=(0,:auto),
+        xlab=xlab, ylab=L"\mathrm{Intensity}\,/\,40\,\mathrm{MeV}")
     # 
-    for (i,(L,M)) in enumerate(used_LMs)
-        scatter!(sp=i, plotdata.x, data_intensities[i],
-            xerr=(plotdata.x[2]-plotdata.x[1])/2,
-            c=:black, title="LM=$L$M", ms=3,
-            lab=i!=1 ? "" : "data",)
-        #
-        plot!(sp=i, pull_mpoints, pw_intensities[i], lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, pull_mpoints, cpw_intensities[i], lab=i!=1 ? "" : "cPW projection", l=(2))
+    for i in 1:M*N
+        if i > length(used_LMs) 
+            plot!(sp=i, axis=false, ticks=false, xlab="", ylab="")
+            continue
+        end
         # 
-        plot!(sp=i, pull_mpoints, cpw_f_intensities[i], lab="", l=(1,:gray))
-        plot!(sp=i, pull_mpoints, cpw_b_intensities[i], lab="", l=(1,:gray))
-        # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
+        plot!.(sp=i, Ref(pull_mpoints), cPWs_all, :I, i, lab="", l=(1, :gray, 0.3))
+        #
+        plot!(sp=i, pull_mpoints, PWs, :I, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
+        # plot!(sp=i, pull_mpoints, cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
+        # 
+        scatter!(sp=i, plotdata.x, plotdata.Iϕ, :I, i,
+            xerr=(plotdata.x[2]-plotdata.x[1])/2,
+            c=:black, ms=3,
+            lab=i!=1 ? "" : "data")
     end
-    plot!(xlab="m(ηπ) (GeV)")
+    plot!()
 end
-
-
-data_phases = [[p.Iϕ.PWs[i].ϕ for p in plotdata] for i in 1:length(used_LMs)]
-data_phases_adj = meanshiftbyperiod.(data_phases, 0)
-# 
-pw_phases = alignperiodicsequence.([((PWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
-pw_phases_adj = meanshiftbyperiod.(pw_phases, mean.(data_phases_adj)..:val)
-# 
-cpw_phases = alignperiodicsequence.([((cPWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
-cpw_phases_adj = meanshiftbyperiod.(cpw_phases, mean.(data_phases_adj)..:val)
-# 
-cpw_f_phases = alignperiodicsequence.([((cPWs_f..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
-cpw_f_phases_adj = meanshiftbyperiod.(cpw_f_phases, mean.(data_phases_adj)..:val)
-# 
-cpw_b_phases = alignperiodicsequence.([((cPWs..:PWs)..i)..:ϕ for i in 1:length(used_LMs)])
-cpw_b_phases_adj = meanshiftbyperiod.(cpw_b_phases, mean.(data_phases_adj)..:val)
+savefig(plotsdir(tag, "intensities_with_bartlett.pdf"))
 
 let
     N = 3
     M = div(length(used_LMs)-1,3)+1
-    plot(layout=grid(M,N), size=(300*N,300*M))
+    plot(layout=grid(M,N), size=(300*N,300*M), frame=:box, grid=false,
+        xlab=xlab, ylab=L"\mathrm{Phase}\,\,(\mathrm{deg})")
     # 
-    for (i,(L,M)) in enumerate(used_LMs)
-        scatter!(sp=i, plotdata.x, data_phases_adj[i],
+    for i in 1:M*N
+        if i == 2 || i > length(used_LMs) 
+            plot!(sp=i, axis=false, ticks=false, xlab="", ylab="")
+            continue
+        end
+        # 
+        plot!.(sp=i, Ref(pull_mpoints), cPWs_all, :ϕ, i, lab="", l=(1, :gray, 0.3))
+        #
+        plot!(sp=i, pull_mpoints, PWs, :ϕ, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
+        # plot!(sp=i, pull_mpoints, cPWs, :ϕ, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
+        #
+        scatter!(sp=i, plotdata.x, plotdata.Iϕ, :ϕ, i,
             xerr=(plotdata.x[2]-plotdata.x[1])/2,
-            c=:black, title="LM=$L$M", ms=3,
+            c=:black, ms=3,
             lab=i!=1 ? "" : "data",)
         #
-        plot!(sp=i, pull_mpoints, pw_phases_adj[i], lab=i!=1 ? "" : "PW projection", l=(2))
-        plot!(sp=i, pull_mpoints, cpw_phases_adj[i], lab=i!=1 ? "" : "cPW projection", l=(2))
-        #
-        plot!(sp=i, pull_mpoints, cpw_f_phases_adj[i], lab="", l=(1,:gray))
-        plot!(sp=i, pull_mpoints, cpw_b_phases_adj[i], lab="", l=(1,:gray))
-        # vspan!(sp=i, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
     end
-    plot!(xlab="m(ηπ) (GeV)")
+    plot!()
 end
-# 
+savefig(plotsdir(tag, "phases_with_bartlett.pdf"))
+
+
+wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V) = 
+    hcat([func(PWs, i) for i in 1:length(used_LMs)]...)
+#
+
 writedlm(fitsfolder(tag,"data_ajusted.txt"),
     hcat(plotdata.x,
-        hcat(data_intensities...)..:val,
-        hcat(data_intensities...)..:err,
-        hcat(data_phases_adj...)..:val,
-        hcat(data_phases_adj...)..:err))
-# 
+        wavesbinsmatrix(intensity, plotdata.Iϕ)..:val,
+        wavesbinsmatrix(intensity, plotdata.Iϕ)..:err,
+        wavesbinsmatrix(phase, plotdata.Iϕ)..:val,
+        wavesbinsmatrix(phase, plotdata.Iϕ)..:err))
+#
 writedlm(fitsfolder(tag,"pw_ajusted.txt"),
-    hcat(plotdata.x,
-        hcat(pw_intensities...),
-        hcat(cpw_intensities...),
-        hcat(pw_phases_adj...),
-        hcat(cpw_phases_adj...)))
+    hcat(pull_mpoints,
+        wavesbinsmatrix(intensity, changerepresentation.(PWs)),
+        wavesbinsmatrix(intensity, changerepresentation.(cPWs)),
+        wavesbinsmatrix(intensity, changerepresentation.(cPWs_f)),
+        wavesbinsmatrix(intensity, changerepresentation.(cPWs_b))))

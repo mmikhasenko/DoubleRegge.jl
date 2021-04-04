@@ -25,7 +25,7 @@ function shiftbyperiod(Δ; period=2π)
 end
 shiftbyperiod(el, pref; period=2π) = shiftbyperiod(el-pref; period=2π)
 # 
-meanshiftbyperiod(phases, ref) = phases .+ shiftbyperiod(mean(phases)-ref)
+meanshiftbyperiod(phases, ref=0) = phases .+ shiftbyperiod(mean(phases)-ref)
 
 
 function alignperiodicsequence(v::Vector; period=2π)

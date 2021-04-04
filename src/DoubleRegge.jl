@@ -65,6 +65,7 @@ export inlims
 export ..
 export plotsfolder, fitsfolder
 export shiftbyperiod, alignperiodicsequence
+export meanshiftbyperiod
 include("utils.jl")
 
 export constrained_pw_projection
