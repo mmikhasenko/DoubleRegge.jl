@@ -70,7 +70,7 @@ end
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -219,10 +219,10 @@ let
         end
         # 
         plot!.(sp=i, Ref(pull_mpoints), cPWs_all, :I, i, lab="", l=(1, :gray, 0.3))
-        #
+    #     #
         plot!(sp=i, pull_mpoints, PWs, :I, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
-        # plot!(sp=i, pull_mpoints, cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
-        # 
+    #     # plot!(sp=i, pull_mpoints, cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
+    #     # 
         scatter!(sp=i, plotdata.x, plotdata.Iϕ, :I, i,
             xerr=(plotdata.x[2]-plotdata.x[1])/2,
             c=:black, ms=3,
