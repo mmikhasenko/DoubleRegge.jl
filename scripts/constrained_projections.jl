@@ -71,7 +71,7 @@ end
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
