@@ -17,6 +17,7 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 using LaTeXStrings
 # 
 using DoubleRegge
+using LinearAlgebra
 
 
 #                                _|                      
@@ -27,32 +28,32 @@ using DoubleRegge
 #                                    _|                  
 #                                    _|                  
 
-function intensity(PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V, i::Integer)
-    (((PWs)..:PWs)..i)..:I
+function intensity(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}, i::Integer)
+    (((mass_PWs)..:PWs)..i)..:I
 end
-function phase(PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V, i::Integer)
-    phases = alignperiodicsequence(((PWs..:PWs)..i)..:ϕ)
+function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}, i::Integer)
+    phases = alignperiodicsequence(((mass_PWs..:PWs)..i)..:ϕ)
     phases_adj = meanshiftbyperiod(phases)
 end
 
-@recipe function f(x, PWs::Vector{TwoBodyPartialWaves{N, V}} where N where V <: Number,
+@recipe function f(x, mass_PWs::Vector{TwoBodyPartialWaveAs{N,T}} where {N,T},
     what::Symbol, i::Integer; iref=2)
-    PWsIϕ = changerepresentation.(PWs; iref=iref)
-    (x,PWsIϕ,what,i)
+    mass_PWsIϕ = changerepresentation.(mass_PWs; iref=iref)
+    (x, mass_PWsIϕ, what, i)
 end
 
-@recipe function f(x, PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V,
+@recipe function f(x, mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V},
     what::Symbol, i::Integer)
     y = []
     label --> ""
-    L,M = PWs[1].LMs[i]
+    L,M = mass_PWs[1].LMs[i]
     title --> "LM=$L$M"
     if what == :I
-        intensities = intensity(PWs, i)
+        intensities = intensity(mass_PWs, i)
         y = intensities
     end
     if what == :ϕ
-        phases_adj = phase(PWs, i)
+        phases_adj = phase(mass_PWs, i)
         if mean(phases_adj) < π/2
             phases_adj .+= 2π
         end
@@ -143,6 +144,8 @@ function morefrequentrange(values, factor)
     len = factor*(length(values)-1)+1
     return range(values[1], values[end], length=len)
 end
+# 
+pull_mpoints = morefrequentrange(plotdata.x, 5)
 
 #  _|              _|                                    
 #      _|_|_|    _|_|_|_|    _|_|    _|_|_|      _|_|_|  
@@ -150,15 +153,14 @@ end
 #  _|  _|    _|    _|      _|        _|    _|      _|_|  
 #  _|  _|    _|      _|_|    _|_|_|  _|    _|  _|_|_|    
 
-pull_mpoints = morefrequentrange(plotdata.x, 5)
 # 
 pw_projections = pw_project_fixed_model.(pull_mpoints)
 writedlm(fitsfolder(tag,"PWs.txt"), hcat(unfold.(pw_projections)...))
 
-@time cPWs_starting_from_pw = 
+@time mass_cPWs_starting_from_pw = 
     [constrained_pw_projection_fixed_model(x,a) for (x,a) in zip(pull_mpoints, pw_projections)]
 writedlm(fitsfolder(tag,"cPWs.txt"),
-    hcat(unfold.(getproperty.(cPWs_starting_from_pw, :pars))...))
+    hcat(unfold.(getproperty.(mass_cPWs_starting_from_pw, :pars))...))
 #
 
 # ambibuities
@@ -171,6 +173,103 @@ writedlm(fitsfolder(tag,"cPWs_backward.txt"),
     hcat(unfold.(getproperty.(cpw_backward, :pars))...))
 
 
+#                            _|        _|                      _|    _|      _|                      
+#    _|_|_|  _|_|_|  _|_|    _|_|_|          _|_|_|  _|    _|      _|_|_|_|        _|_|      _|_|_|  
+#  _|    _|  _|    _|    _|  _|    _|  _|  _|    _|  _|    _|  _|    _|      _|  _|_|_|_|  _|_|      
+#  _|    _|  _|    _|    _|  _|    _|  _|  _|    _|  _|    _|  _|    _|      _|  _|            _|_|  
+#    _|_|_|  _|    _|    _|  _|_|_|    _|    _|_|_|    _|_|_|  _|      _|_|  _|    _|_|_|  _|_|_|    
+#                                                _|                                                  
+#                                            _|_|                                                    
+
+function read_PW_matrices(filename, LMs)
+    matrix = readdlm(filename)
+    amplitudevectors = [fold(matrix[:,i]) for i in 1:size(matrix,2)]
+    return TwoBodyPartialWaves.(Ref(LMs), amplitudevectors)
+end
+
+mass_PWs = read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs)
+mass_cPWs = read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs)
+mass_cPWs_f = read_PW_matrices(fitsfolder(tag,"cPWs_forward.txt"), used_LMs)
+mass_cPWs_b = read_PW_matrices(fitsfolder(tag,"cPWs_backward.txt"), used_LMs)
+#
+# 
+function ambiguousPWs(PWs::TwoBodyPartialWaveAs)
+    L1_indices = used_LMs..2 .== 1
+    ba = bartlettambiguities(PWs.PWs[L1_indices])
+    return [TwoBodyPartialWaves(Vector(PWs.LMs),
+        [L1_indices[i] ? a[sum(L1_indices[1:i])] : PWs.PWs[i] for i in 1:length(used_LMs)])
+        for a in ba]
+end
+
+function ambiguity_tracking(init_index, sets)
+    N = length(sets)
+    indices = [init_index]
+    intensities = [reorder([s..:PWs for k in 1:length(used_LMs)]) for s in sets]
+    for i in 2:N
+        Ii = intensities[i-1][indices[end]]
+        set_i = intensities[i]
+        v,ind = findmin(map(x->norm(x.-Ii), set_i))
+        push!(indices, ind)
+    end
+    getindex.(sets, indices)
+end
+# 
+pre_PWs = ambiguousPWs.(mass_cPWs_f)
+mass_cPWs_all = [ambiguity_tracking(k, pre_PWs) for k in 1:length(pre_PWs[1])]
+
+
+#                                _|                      _|            
+#    _|_|_|  _|_|_|      _|_|_|  _|  _|    _|    _|_|_|        _|_|_|  
+#  _|    _|  _|    _|  _|    _|  _|  _|    _|  _|_|      _|  _|_|      
+#  _|    _|  _|    _|  _|    _|  _|  _|    _|      _|_|  _|      _|_|  
+#    _|_|_|  _|    _|    _|_|_|  _|    _|_|_|  _|_|_|    _|  _|_|_|    
+#                                          _|                          
+#                                      _|_|                            
+
+function ellh(intensity_cosθϕ, PWs, LMs)
+    function integrand(cosθ,ϕ,pars)
+        Id = intensity_cosθϕ(cosθ, ϕ)
+        Im = abs2(sum(p*Psi(L,M,cosθ,ϕ) for (p,(L,M)) in zip(pars,LMs)))
+        Im ≈ 0.0 && (Im=nextfloat(0.0))
+        return -Id*log(Im)
+    end
+    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,fold(pars)))[1]
+    return f(unfold(PWs))
+end
+
+function full_llh(xv, mass_PWs)
+    return sum(ellh(
+        (cosθ,ϕ)->intensity(x,cosθ,ϕ),
+        y.PWs, y.LMs) for (x, y) in zip(xv, mass_PWs))
+end
+
+@time llh_ambiguities = full_llh.(Ref(pull_mpoints), mass_cPWs_all)
+histogram(llh_ambiguities .- llh_ambiguities[1])
+# 
+
+function chi2(Imodel, Idata, i)
+    χ2 = 0
+    #
+    I_m = intensity(Imodel, i)
+    I_d = intensity(Idata, i)
+    χ2 += sum(((I_d..:val) .- I_m).^2 ./ (I_d..:err).^2)
+    (i==2 || i==6) && return χ2
+    # phase
+    ϕ_d = phase(Idata, i)
+    phases = alignperiodicsequence(((Imodel..:PWs)..i)..:ϕ)
+    ϕ_m = meanshiftbyperiod(phases, mean(ϕ_d).val)
+    χ2 += sum(((ϕ_d..:val) .- ϕ_m).^2 ./ (ϕ_d..:err).^2)
+    return χ2
+end
+full_chi2(Imodel, Idata) = sum(chi2(Imodel, Idata, i) for i in 1:length(used_LMs))
+
+@time chi2_all = [full_chi2(changerepresentation.(expansion[1:5:end]; iref=2), plotdata.Iϕ)
+    for expansion in mass_cPWs_all]
+#
+histogram(chi2_all, bins=100)
+_, best_ambiguity_i = findmin(chi2_all)
+
+
 #            _|              _|      _|      _|                      
 #  _|_|_|    _|    _|_|    _|_|_|_|_|_|_|_|      _|_|_|      _|_|_|  
 #  _|    _|  _|  _|    _|    _|      _|      _|  _|    _|  _|    _|  
@@ -179,32 +278,6 @@ writedlm(fitsfolder(tag,"cPWs_backward.txt"),
 #  _|                                                            _|  
 #  _|                                                        _|_|    
 
-function read_PW_matrices(filename, LMs)
-    matrix = readdlm(filename)
-    # 
-    amplitudevectors = [fold(matrix[:,i]) for i in 1:size(matrix,2)]
-    return TwoBodyPartialWaves.(Ref(LMs), amplitudevectors)
-end
-
-
-PWs = read_PW_matrices(fitsfolder(tag,"PWs.txt"), used_LMs)
-cPWs = read_PW_matrices(fitsfolder(tag,"cPWs.txt"), used_LMs)
-cPWs_f = read_PW_matrices(fitsfolder(tag,"cPWs_forward.txt"), used_LMs)
-cPWs_b = read_PW_matrices(fitsfolder(tag,"cPWs_backward.txt"), used_LMs)
-#
-
-function ambiguousPWs(PWs::TwoBodyPartialWaves{N, V} where N where V <: Number)
-    L1_indices = used_LMs..2 .== 1
-    ba = bartlettambiguities(PWs.PWs[L1_indices])
-    return [TwoBodyPartialWaves(Vector(PWs.LMs),
-        [L1_indices[i] ? a[sum(L1_indices[1:i])] : PWs.PWs[i] for i in 1:length(used_LMs)])
-        for a in ba]
-    #
-    
-end
-reorder(vecofvec) = [getindex.(vecofvec,i) for i in 1:length(vecofvec[1])]
-
-cPWs_all = reorder(ambiguousPWs.(cPWs_f))
 
 let
     N = 3
@@ -218,10 +291,11 @@ let
             continue
         end
         # 
-        plot!.(sp=i, Ref(pull_mpoints), cPWs_all, :I, i, lab="", l=(1, :gray, 0.3))
+        # plot!.(sp=i, Ref(pull_mpoints), mass_cPWs_all, :I, i, lab="", l=(1, :gray, 0.3))
+        plot!(sp=i, pull_mpoints, mass_cPWs_all[best_ambiguity_i], :I, i, lab=i!=1 ? "" : "cPW projection", l=(2, :blue))
     #     #
-        plot!(sp=i, pull_mpoints, PWs, :I, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
-    #     # plot!(sp=i, pull_mpoints, cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
+        plot!(sp=i, pull_mpoints, mass_PWs, :I, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
+    #     # plot!(sp=i, pull_mpoints, mass_cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
     #     # 
         scatter!(sp=i, plotdata.x, plotdata.Iϕ, :I, i,
             xerr=(plotdata.x[2]-plotdata.x[1])/2,
@@ -244,10 +318,11 @@ let
             continue
         end
         # 
-        plot!.(sp=i, Ref(pull_mpoints), cPWs_all, :ϕ, i, lab="", l=(1, :gray, 0.3))
+        # plot!.(sp=i, Ref(pull_mpoints), mass_cPWs_all, :ϕ, i, lab="", l=(1, :gray, 0.3))
+        plot!(sp=i, pull_mpoints, mass_cPWs_all[best_ambiguity_i], :ϕ, i, lab=i!=1 ? "" : "cPW projection", l=(2, :blue))
         #
-        plot!(sp=i, pull_mpoints, PWs, :ϕ, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
-        # plot!(sp=i, pull_mpoints, cPWs, :ϕ, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
+        plot!(sp=i, pull_mpoints, mass_PWs, :ϕ, i, lab=i!=1 ? "" : "PW projection", l=(2,:red,:dash))
+        # plot!(sp=i, pull_mpoints, mass_cPWs, :ϕ, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
         #
         scatter!(sp=i, plotdata.x, plotdata.Iϕ, :ϕ, i,
             xerr=(plotdata.x[2]-plotdata.x[1])/2,
@@ -259,8 +334,7 @@ let
 end
 savefig(plotsdir(tag, "phases_with_bartlett.pdf"))
 
-
-wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}}} where N where V) = 
+wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) = 
     hcat([func(PWs, i) for i in 1:length(used_LMs)]...)
 #
 
@@ -273,7 +347,5 @@ writedlm(fitsfolder(tag,"data_ajusted.txt"),
 #
 writedlm(fitsfolder(tag,"pw_ajusted.txt"),
     hcat(pull_mpoints,
-        wavesbinsmatrix(intensity, changerepresentation.(PWs)),
-        wavesbinsmatrix(intensity, changerepresentation.(cPWs)),
-        wavesbinsmatrix(intensity, changerepresentation.(cPWs_f)),
-        wavesbinsmatrix(intensity, changerepresentation.(cPWs_b))))
+        wavesbinsmatrix(intensity, changerepresentation.(mass_PWs; iref=2)),
+        wavesbinsmatrix(intensity, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref=2))))
