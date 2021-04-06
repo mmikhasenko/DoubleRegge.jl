@@ -3,12 +3,15 @@ struct TwoBodyPartialWaves{N,T}
     PWs::SVector{N,T}
 end
 
+const TwoBodyPartialWaveAs{N,T} = TwoBodyPartialWaves{N, T} where N where T <: Number
+const TwoBodyPartialWaveIϕs{N,V} = TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}} where N where V
+
 TwoBodyPartialWaves(LMs::Vector, PWs::Vector) =
     (N=length(LMs); TwoBodyPartialWaves(SVector{N}(LMs), SVector{N}(PWs)))
 #
-changerepresentation(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I,:ϕ),V}} where N where V) =
+changerepresentation(expansion::TwoBodyPartialWaveIϕs) =
     TwoBodyPartialWaves(expansion.LMs, map(x->amplitude(x.I, x.ϕ), expansion.PWs))
-changerepresentation(expansion::TwoBodyPartialWaves{N, V} where N where V <: Number; iref=1) =
+changerepresentation(expansion::TwoBodyPartialWaveAs; iref) =
     TwoBodyPartialWaves(expansion.LMs, Iϕ.(expansion.PWs; ref=expansion.PWs[iref]))
 # 
 

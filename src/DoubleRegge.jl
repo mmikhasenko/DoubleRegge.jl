@@ -35,6 +35,7 @@ export path_ηπ, path_η′π
 export description_ηπ, description_η′π
 export read_data
 export TwoBodyPartialWaves
+export TwoBodyPartialWaveAs, TwoBodyPartialWaveIϕs
 export changerepresentation
 include("dataIO.jl")
 
