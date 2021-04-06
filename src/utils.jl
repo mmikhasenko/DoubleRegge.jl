@@ -3,6 +3,7 @@ inlims(x,lims) = lims[1] ≤ x ≤ lims[2]
 (..)(x::AbstractArray,i...) = getindex.(x,i...)
 (..)(x::AbstractArray,i::Symbol) = getfield.(x,i)
 
+reorder(vecofvec::Union{Vector{Vector{T}},Vector{SVector{N,T}}} where {T,N}) = [getindex.(vecofvec,i) for i in 1:length(vecofvec[1])]
 
 function mysum(t::T where T<:Type, itrs::Base.Generator)
     v = zero(t)

@@ -62,7 +62,7 @@ export bootstrap_band, slice
 include("bootstrap.jl")
 
 export inlims
-export ..
+export .., reorder
 export plotsfolder, fitsfolder
 export shiftbyperiod, alignperiodicsequence
 export meanshiftbyperiod
