@@ -1,0 +1,19 @@
+[constrained_fits]
+Itot_PWs = 21268.861360233135
+Itot_data = [22832.849107000002, 1959.7184337864196]
+pw_fraction = 0.9315178348437033
+Itot_cPWs = 22832.47895495396
+
+[settings]
+exchanges = [1, 2, 3, 4]
+pathtodata = "data\\exp_raw\\PLB_shifted"
+t2 = -0.2
+fitrange = [2.4, 3.0]
+initial_pars = [0.3, 3.7, -0.2, -9.0]
+system = "compass_η′π"
+"scale_α" = 0.8
+
+[fit_results]
+fit_converged = false
+fit_minimizer = [0.1616137948071456, 1.5087121779386548, -0.21112722561410951, -7.6648702409817275]
+fit_minimum = -116915.74361982872

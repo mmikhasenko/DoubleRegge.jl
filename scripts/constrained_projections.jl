@@ -18,6 +18,8 @@ using LaTeXStrings
 # 
 using DoubleRegge
 using LinearAlgebra
+# 
+using Measurements
 
 
 #                                _|                      
@@ -71,7 +73,7 @@ end
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -349,3 +351,25 @@ writedlm(fitsfolder(tag,"pw_ajusted.txt"),
     hcat(pull_mpoints,
         wavesbinsmatrix(intensity, changerepresentation.(mass_PWs; iref=2)),
         wavesbinsmatrix(intensity, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref=2))))
+
+
+sumintensityoverbins(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) = 
+    sum(sum, intensity(mass_PWs, i) for i in 1:length(used_LMs))
+
+Itot_PWs = sumintensityoverbins(changerepresentation.(mass_PWs[1:5:end]; iref=2))
+Itot_cPWs = sumintensityoverbins(changerepresentation.(mass_cPWs[1:5:end]; iref=2))
+Itot_data = sumintensityoverbins(plotdata.Iϕ)
+
+to_toml(v::Measurement) = [v.val, v.err]
+# 
+open(fitsfolder(tag, "constrained.toml"),"w") do io
+    TOML.print(to_toml, io, Dict(
+            "settings"=>settings,
+            "fit_results"=>fit_results,
+            "constrained_fits" => Dict(
+                "Itot_PWs"  => Itot_PWs,
+                "Itot_cPWs" => Itot_cPWs,
+                "Itot_data" => to_toml(Itot_data),
+                "pw_fraction" => Itot_PWs/Itot_cPWs)
+            ))
+end
