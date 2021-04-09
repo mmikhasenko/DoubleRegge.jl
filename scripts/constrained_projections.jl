@@ -7,7 +7,6 @@ using Cuba
 using ForwardDiff
 using Optim
 using DelimitedFiles
-using BenchmarkTools
 using Cuba
 
 # 
@@ -20,6 +19,7 @@ using DoubleRegge
 using LinearAlgebra
 # 
 using Measurements
+using Statistics
 
 
 #                                _|                      
@@ -36,6 +36,10 @@ end
 function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}, i::Integer)
     phases = alignperiodicsequence(((mass_PWs..:PWs)..i)..:ϕ)
     phases_adj = meanshiftbyperiod(phases)
+    if mean(phases_adj) < π/2
+        phases_adj .+= 2π
+    end
+    return phases_adj
 end
 
 @recipe function f(x, mass_PWs::Vector{TwoBodyPartialWaveAs{N,T}} where {N,T},
@@ -56,9 +60,6 @@ end
     end
     if what == :ϕ
         phases_adj = phase(mass_PWs, i)
-        if mean(phases_adj) < π/2
-            phases_adj .+= 2π
-        end
         y = phases_adj .* (180/π)
     end
     (x,y)
@@ -73,7 +74,7 @@ end
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -350,7 +351,9 @@ writedlm(fitsfolder(tag,"data_ajusted.txt"),
 writedlm(fitsfolder(tag,"pw_ajusted.txt"),
     hcat(pull_mpoints,
         wavesbinsmatrix(intensity, changerepresentation.(mass_PWs; iref=2)),
-        wavesbinsmatrix(intensity, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref=2))))
+        wavesbinsmatrix(intensity, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref=2)),
+        wavesbinsmatrix(phase, changerepresentation.(mass_PWs; iref=2)),
+        wavesbinsmatrix(phase, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref=2))))
 
 
 sumintensityoverbins(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) = 
