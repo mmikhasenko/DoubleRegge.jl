@@ -1,5 +1,8 @@
-using DrWatson
-@quickactivate "DoubleRegge"
+# using DrWatson
+# @quickactivate "DoubleRegge"
+using Pkg
+Pkg.activate(joinpath(@__DIR__,".."))
+# 
 using TOML
 using TypedTables
 using QuadGK
@@ -20,6 +23,7 @@ using LinearAlgebra
 # 
 using Measurements
 using Statistics
+using Parameters
 
 
 #                                _|                      
@@ -74,7 +78,7 @@ end
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -307,7 +311,7 @@ let
     end
     plot!()
 end
-savefig(plotsdir(tag, "intensities_with_bartlett.pdf"))
+savefig(plotsfolder(tag, "intensities_with_bartlett.pdf"))
 
 let
     N = 3
@@ -335,7 +339,7 @@ let
     end
     plot!()
 end
-savefig(plotsdir(tag, "phases_with_bartlett.pdf"))
+savefig(plotsfolder(tag, "phases_with_bartlett.pdf"))
 
 wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) = 
     hcat([func(PWs, i) for i in 1:length(used_LMs)]...)
