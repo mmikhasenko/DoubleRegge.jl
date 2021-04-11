@@ -2,10 +2,11 @@ using DrWatson
 @quickactivate "DoubleRegge"
 # 
 using TOML
+using DoubleRegge
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -14,8 +15,8 @@ settings = Dict(
     "pathtodata" => joinpath("data","exp_raw","PLB_shifted"),
     "fitrange" => [2.4, 3.0],
     "t2" => -0.2,
-    "exchanges" => [1,2,3,4],
-    "initial_pars" => [0.3, 3.7, -0.2, -9.0],
+    "exchanges" => [1,2,4,5],
+    "initial_pars" => [0.2, 1.2, -9.0, -0.5],
     "scale_α" => 0.8,
 )
 

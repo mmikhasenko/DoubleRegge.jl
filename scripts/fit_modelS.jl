@@ -1,5 +1,7 @@
-using DrWatson
-@quickactivate "DoubleRegge"
+# using DrWatson
+# @quickactivate "DoubleRegge"
+using Pkg
+Pkg.activate(joinpath(@__DIR__,".."))
 
 using Plots
 theme(:wong; size=(500,350))
@@ -20,7 +22,7 @@ using DoubleRegge
 
 # # # # # # # # # # # # # # # # # # # # 
 # 
-tag = "etappi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+tag = "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
 # 
 # # # # # # # # # # # # # # # # # # # # 
 
@@ -52,6 +54,7 @@ function integrand(cosθ,ϕ,pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps))
     Am = model.(fitdata.x, cosθ, ϕ; pars=pars)
     Im = abs2.(Am) .* q.(fitdata.x)
+    # @show pars
     return sum(Im .- Id .* log.(Im))
 end
 ellh(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
@@ -60,9 +63,9 @@ ellh(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand(cosθ,ϕ,pars))[1]
 integrand′(cosθ,ϕ,pars) = ForwardDiff.gradient(p->integrand(cosθ,ϕ,p), pars)
 ellh′(pars) = integrate_dcosθdϕ((cosθ,ϕ)->integrand′(cosθ,ϕ,pars), dims=length(pars))
 ellh′!(stor,pars) = (stor .= ellh′(pars)) 
-
+# ellh′!, 
 # fit
-ft = Optim.optimize(ellh, ellh′!, settings["initial_pars"], BFGS(),
+ft = Optim.optimize(ellh, settings["initial_pars"], BFGS(),
                Optim.Options(show_trace = true, g_tol=1e-4, iterations=15))
 #
 
