@@ -22,7 +22,7 @@ function dNdcosθ(cosθ, expansion)
     return v
 end
 #
-dNdϕ(ϕ, expansion; cosθlims::Tuple{Real,Real}=(-1,1), LMs) =
+dNdϕ(ϕ, expansion; cosθlims::Tuple{Real,Real}=(-1,1)) =
     quadgk(cosθ->abs2(recamp(cosθ,ϕ,expansion)), cosθlims...)[1]
 
 function integrate_dcosθdϕ(g, cosθlims=(-1,1), ϕlims=(-π+0.31,π+0.31); dims::Int=1)
