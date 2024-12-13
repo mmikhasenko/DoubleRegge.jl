@@ -1,7 +1,7 @@
 [settings]
 tag = "a2Po-f2Po-a2f2-f2f2-Pof2_opposite-sign"
 exchanges = [1, 2, 3, 4, 6]
-pathtodata = "data\\exp_raw\\PLB_shifted"
+pathtodata = "data/exp_raw/PLB_shifted"
 t2 = -0.2
 fitrange = [2.4, 3.0]
 initial_pars = [0.3, 3.7, -0.2, -9.0, 0.0]
@@ -11,5 +11,11 @@ s2_shift = 0.0
 
 [fit_results]
 fit_converged = false
-fit_minimizer = [0.28505358011695986, 3.6660531188470222, -0.138541504006508, -9.991948632163481, 0.055218331858289324]
+fit_minimizer = [
+    0.28505358011695986,
+    3.6660531188470222,
+    -0.138541504006508,
+    -9.991948632163481,
+    0.055218331858289324,
+]
 fit_minimum = -227456.81406411092

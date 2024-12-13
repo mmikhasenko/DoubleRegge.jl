@@ -1,7 +1,7 @@
 [settings]
 tag = "a2Po-f2f2-PoPo_opposite-sign"
 exchanges = [1, 4, 5]
-pathtodata = "data\\exp_raw\\PLB_shifted"
+pathtodata = "data/exp_raw/PLB_shifted"
 t2 = -0.2
 fitrange = [2.4, 3.0]
 initial_pars = [0.7, -11.0, 0.0]

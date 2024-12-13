@@ -1,5 +1,5 @@
 exchanges = [1, 2, 4, 5]
-pathtodata = "data\\exp_raw\\PLB_shifted"
+pathtodata = "data/exp_raw/PLB_shifted"
 t2 = -0.2
 fitrange = [2.4, 3.0]
 initial_pars = [0.2, 1.2, -9.0, -0.5]

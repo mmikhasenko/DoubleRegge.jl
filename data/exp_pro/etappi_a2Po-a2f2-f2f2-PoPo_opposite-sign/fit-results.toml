@@ -1,6 +1,6 @@
 [settings]
 exchanges = [1, 2, 4, 5]
-pathtodata = "data\\exp_raw\\PLB_shifted"
+pathtodata = "data/exp_raw/PLB_shifted"
 t2 = -0.2
 fitrange = [2.4, 3.0]
 initial_pars = [0.2, 1.2, -9.0, -0.5]
@@ -9,5 +9,10 @@ system = "compass_η′π"
 
 [fit_results]
 fit_converged = false
-fit_minimizer = [0.18652336854017876, 1.221603920091453, -9.002070891136418, 0.011840513823779686]
+fit_minimizer = [
+    0.18652336854017876,
+    1.221603920091453,
+    -9.002070891136418,
+    0.011840513823779686,
+]
 fit_minimum = -118330.70680928984
