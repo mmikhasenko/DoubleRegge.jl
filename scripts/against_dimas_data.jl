@@ -2,6 +2,7 @@ using DrWatson
 @quickactivate "DoubleRegge"
 
 using DoubleRegge
+setsystem!(:compass_ηπ)
 
 using UnROOT
 using StaticArrays
@@ -12,28 +13,28 @@ using LinearAlgebra
 
 theme(:wong)
 
-##########################################
-function list_of_vectors(tree_entry;
-    varnames = error("list of four-vector names"),
-    branchnames = error("list of branch names"),
-    components = ['X', 'Y', 'Z', 'E'],
-    between = "",
-    before = "")
-    tpl = NamedTuple{varnames}(
-        [SVector([getproperty(tree_entry, Symbol(before * p * between * c)) for c in ['X', 'Y', 'Z', 'E']]...)
-         for p in branchnames])
-    return tpl
-end
-
-##########################################
-
-vof = broadcast_over_tree(
-    row -> list_of_vectors(row;
-        varnames = (:pb, :pr, :pπ, :pη),
-        branchnames = ["pBeam", "pRecoil", "pPim", "pEta"],
-        components = ['X', 'Y', 'Z', 'E']);
-    filename = datadir("exp_raw", "dimas_toys", "pi03pic_mc_pwa_model_2.root"),
-    treename = "pi03pic");
+vof = let
+    file_name = datadir("exp_raw", "dimas_toys", "pi03pic_mc_pwa_model_2.root")
+    !(isfile(file_name)) && error("no file $file_name")
+    # 
+    file = ROOTFile(file_name)
+    # 
+    tree_name = "pi03pic"
+    tree = LazyTree(file, tree_name)
+    #
+    branchnames = ["pBeam", "pRecoil", "pPim", "pEta"]
+    components = ['X', 'Y', 'Z', 'E']
+    varnames = (:pb, :pr, :pπ, :pη)
+    # 
+    n = size(tree, 1)
+    v = map(1:n) do i
+        row = tree[i, :]
+        map(branchnames) do p
+            SVector([getproperty(row, Symbol(p * c)) for c in components]...)
+        end
+    end
+    NamedTuple{varnames}.(v)
+end;
 
 invariants(pb, pr, pπ, pη) =
     (s0 = invmasssq(pr + pπ + pη),
@@ -44,8 +45,8 @@ invariants(pb, pr, pπ, pη) =
 
 voi = [invariants(v.pb, v.pr, v.pπ, v.pη) for v in vof];
 
-histogram(ϕTY.(vof))
-histogram(cosθ1.(voi))
+stephist(ϕTY.(vof))
+stephist(cosθ1.(voi))
 histogram2d(sqrt.(getproperty.(voi, :s1)), cosθ1.(voi))
 
 vok = [(ϕ = ϕ, cosθ = cosθ, mηπ = mηπ) for
@@ -61,6 +62,7 @@ const x0 = 0.74;
 bin_range(i) = (x0 + (i - 1) * Δx, x0 + i * Δx)
 
 const main = readdlm(datadir("exp_pro", "main_point.txt"));
+main
 
 let
     ps = [
