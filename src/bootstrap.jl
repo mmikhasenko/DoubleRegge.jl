@@ -12,7 +12,7 @@ strip_errors(_Iϕ::TwoBodyPartialWaveIϕs{Tuple{Measurement{Float64}, Measuremen
         )) |> SVector,
     )
 
-function bootstrap_band(_Iϕ; Npoints::Int = 101, Nsamples::Int = 1000)
+function bootstrap_band(_Iϕ; nPoints::Int = 101, nSamples::Int = 1000)
     # x ± δx
     I_with_err = getindex.(_Iϕ.PWs, :I)
     ϕ_with_err = getindex.(_Iϕ.PWs, :ϕ)
@@ -21,10 +21,10 @@ function bootstrap_band(_Iϕ; Npoints::Int = 101, Nsamples::Int = 1000)
     ϕ, δϕ = getproperty.(ϕ_with_err, :val), getproperty.(ϕ_with_err, :err)
     # computation
     amps = changerepresentation(strip_errors(_Iϕ))
-    cosθv = range(-1, 1, Npoints)
+    cosθv = range(-1, 1, nPoints)
     calv = dNdcosθ.(cosθv, Ref(amps))
     # bootstrap
-    bstp = map(1:Nsamples) do _
+    bstp = map(1:nSamples) do _
         i′ = i .+ randn(length(i)) .* δi
         i′ = map(v -> v < 0 ? 0.0 : v, i′)
         ϕ′ = ϕ + randn(length(i)) .* δϕ
@@ -36,3 +36,7 @@ function bootstrap_band(_Iϕ; Npoints::Int = 101, Nsamples::Int = 1000)
     qls = [quantile(getindex.(bstp, i), [0.16, 0.84]) for i in 1:length(bstp[1])]
     return getindex.(qls, 1), getindex.(qls, 2)
 end
+
+
+# data = read_data(settings["pathtodata"], description_ηπ);
+# @test typeof(strip_errors(data.Iϕ[1])) <: TwoBodyPartialWaveIϕs{Tuple{Float64, Float64}}
