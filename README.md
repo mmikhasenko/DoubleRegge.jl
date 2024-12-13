@@ -1,10 +1,38 @@
 # π p → η(′) π p in the double-Regge region
  
-The project has been finilized and published in [Eur.Phys.J.C 81 (2021) 647](https://inspirehep.net/literature/1859521)
+https://inspirehep.net/literature/1859521
 
-### Parts of the project that may be factored out
- 
- - Ambiguities:
-   - Barlett zeros [basic functions](src/bartlett_ambiguities.jl)
-   - Tracking ambiguities [here](https://github.com/mmikhasenko/DoubleRegge.jl/blob/fcaa7939a273ca8ad9b7e82b407e83019f1929e7/scripts/constrained_projections.jl#L183-L225)
-   - prototype [notebook](https://github.com/mmikhasenko/DoubleRegge.jl/blob/e6654ca03a8de6d29810bcb89f7e6384d9594b00/notebooks/barrlet_zeros.jl)
+
+## Content
+
+### Plotting data, Exploration of the model
+
+- [against_dimas_data.jl](scripts/against_dimas_data.jl)
+- [against_henris_data.jl](scripts/against_henris_data.jl)
+- [shift_etappi.jl](scripts/shift_etappi.jl)
+
+- [alpha_prime_deps.jl](scripts/alpha_prime_deps.jl)
+- [phi_asymmetry_data.jl](scripts/phi_asymmetry_data.jl)
+- [phi_asymmetry_model.jl](scripts/phi_asymmetry_model.jl)
+
+### Constrained Partial Waves
+
+- [constrained_projections.jl](scripts/constrained_projections.jl)
+- [constrained_projections_random_start.jl](scripts/constrained_projections_random_start.jl)
+- [project_model.jl](scripts/project_model.jl)
+- [project_symmetric_model.jl](scripts/project_symmetric_model.jl)
+
+### Modeling
+
+- [fit_modelD.jl](scripts/fit_modelD.jl): 
+- [fit_modelS.jl](scripts/fit_modelS.jl):
+- [etapi_mc.jl](scripts/etapi_mc.jl): generate phase space MC, plot with model weights 
+
+- [bootstrap_reconstruction.jl](scripts/bootstrap_reconstruction.jl)
+- [saving_bootstrap.jl](scripts/saving_bootstrap.jl): bootstrap data, save results
+
+### Technical
+
+- [ELLH.jl](scripts/ELLH.jl): prototype likelihood computation with `Rank1Matrix` object
+- [code_warntype_investigation.jl](scripts/code_warntype_investigation.jl): MWE of a typo problem
+- [publish_settings.jl](scripts/publish_settings.jl): create folders, save settings
