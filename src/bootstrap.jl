@@ -3,15 +3,6 @@
 # slice(data, bin) = getindex.(data, bin)
 # #
 
-strip_errors(_Iϕ::TwoBodyPartialWaveIϕs{Tuple{Measurement{Float64}, Measurement{Float64}}}) =
-    TwoBodyPartialWaves(
-        _Iϕ.LMs,
-        NamedTuple{(:I, :ϕ)}.(zip(
-            getproperty.(getindex.(_Iϕ.PWs, :I), :val),
-            getproperty.(getindex.(_Iϕ.PWs, :ϕ), :val),
-        )) |> SVector,
-    )
-
 function bootstrap_band(_Iϕ; nPoints::Int = 101, nSamples::Int = 1000)
     # x ± δx
     I_with_err = getindex.(_Iϕ.PWs, :I)
