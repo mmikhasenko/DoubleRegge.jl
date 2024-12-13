@@ -6,7 +6,7 @@ using QuadGK
 using PartialWaveFunctions
 using GSL
 using Statistics
-using UpROOT
+using UnROOT
 using StaticArrays
 using LinearAlgebra
 using Cuba

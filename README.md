@@ -7,8 +7,8 @@ https://inspirehep.net/literature/1859521
 
 ### Plotting data, Exploration of the model
 
-- [against_dimas_data.jl](scripts/against_dimas_data.jl)
-- [against_henris_data.jl](scripts/against_henris_data.jl)
+- [against_dimas_data.jl](scripts/against_dimas_data.jl): open Dima's ROOT file, compare with our data
+- [against_henris_data.jl](scripts/against_henris_data.jl): open Dima's and Henri's ROOT file, compare with our data
 - [shift_etappi.jl](scripts/shift_etappi.jl)
 
 - [alpha_prime_deps.jl](scripts/alpha_prime_deps.jl)
