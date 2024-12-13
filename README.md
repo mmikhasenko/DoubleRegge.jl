@@ -24,7 +24,6 @@ https://inspirehep.net/literature/1859521
 
 ### Modeling
 
-- [fit_modelD.jl](scripts/fit_modelD.jl): 
 - [fit_modelS.jl](scripts/fit_modelS.jl):
 - [etapi_mc.jl](scripts/etapi_mc.jl): generate phase space MC, plot with model weights 
 
