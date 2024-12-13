@@ -41,11 +41,7 @@ md"""
 end
 
 # ╔═╡ f0a7b1b4-b971-11ef-0c7f-3b497c108dc6
-begin
-	setsystem!(Symbol(settings["system"]))
-	const description = settings["system"] == "compass_ηπ" ?
-		description_ηπ : description_η′π
-end;
+setsystem!(Symbol(settings["system"]))
 
 # ╔═╡ d900c75f-23be-4000-a365-a4bd7706ef7b
 const model = build_model(

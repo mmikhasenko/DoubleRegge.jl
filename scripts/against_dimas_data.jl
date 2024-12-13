@@ -61,18 +61,16 @@ const Δx = 0.04;
 const x0 = 0.74;
 bin_range(i) = (x0 + (i - 1) * Δx, x0 + i * Δx)
 
+# produced by
 const main = readdlm(datadir("exp_pro", "main_point.txt"));
-main
 
 let
-    ps = [
-        let
-            norm = sum(main[i, :]) / 100 * (1 - (-1))
-            plot(range(-1, 1, length = 100), main[i, :] / norm, lab = (i != 56 ? "" : "corr. PLB PWA rec."), lw = 3) # , α=0.5
-            stephist!(selected_distr(voi; mηπ_bin_range = bin_range(i)), bins = range(-1, 1, length = 100), st = :stephist, norm = true,
-                lab = (i != 56 ? "" : "Dima's MC"), c = :black, title = "bin: $(round(x0 + (2i-1)*Δx/2, digits=2))")
-        end for i in 41:56
-    ]
+    ps = map(41:56) do i
+        norm = sum(main[i, :]) / 100 * (1 - (-1))
+        plot(range(-1, 1, length = 100), main[i, :] / norm, lab = (i != 56 ? "" : "corr. PLB PWA rec."), lw = 3) # , α=0.5
+        stephist!(selected_distr(voi; mηπ_bin_range = bin_range(i)), bins = range(-1, 1, length = 100), st = :stephist, norm = true,
+            lab = (i != 56 ? "" : "Dima's MC"), c = :black, title = "bin: $(round(x0 + (2i-1)*Δx/2, digits=2))")
+    end
     plot(ps..., size = (2000, 1700))
 end
 savefig(plotsdir("dimas_toys_etapi_costheta.pdf"))
