@@ -3,36 +3,36 @@ using DrWatson
 
 using DoubleRegge
 using QuadGK
-using Plots
 using Cuba # HCubature # NIntegration
 using Optim
 using DelimitedFiles
-theme(:wong; size = (500, 350))
+# 
+using Plots
+theme(:wong2;
+    frame = :box, grid = false, lab = "",
+    xlims = (:auto, :auto), ylims = (:auto, :auto))
 #
 #
 #
 # data
-const data = [(inten = get_intesity(L, M),
-    phase = get_phase(L, M)) for (L, M) in LMs];
-const xdata = data[1].inten[:, 1];
-const Nbins = length(xdata)
-#
-const amplitudes = constructamps(
-    slice(data, :inten, 1:Nbins),
-    slice(data, :phase, 1:Nbins),
-);
+const data_folder = "data/exp_raw/PLB_shifted"
+const data = read_data(data_folder, description_ηπ);
+const nBins = length(data)
 
 # error band
 const lower_bands = readdlm(datadir("exp_pro", "bootstrap_lower.txt"));
 const upper_bands = readdlm(datadir("exp_pro", "bootstrap_upper.txt"));
 
+
 # range
 fit_range = (2.5, 3.0)
-filt_fr = fit_range[1] .< xdata .< fit_range[2]
-const amplitudes_fr = map(as -> as[filt_fr], amplitudes)
-const xdata_fr = xdata[filt_fr];
+filt_fr = fit_range[1] .< data.x .< fit_range[2]
+const amplitudes_fr = data.amps[filt_fr];
+const xdata_fr = data.x[filt_fr];
 const lower_bands_fr = lower_bands[filt_fr, :];
 const upper_bands_fr = upper_bands[filt_fr, :];
+
+DoubleRegge.s0
 
 # fit
 function model(mηπ, cosθ, ϕ; pars)
@@ -43,7 +43,7 @@ function model(mηπ, cosθ, ϕ; pars)
            -pars[3] * modelDR(α_ℙ, α_ℙ, vars; η_forward = false)
 end
 #
-# model(2.3, cos(π/3),π/4; pars=[1.0, 1.0])
+model(2.3, cos(π / 3), π / 4; pars = [1.0, 1.0])
 #
 function χ2(cosθ, ϕ, c)
     # @show cosθ,ϕ
