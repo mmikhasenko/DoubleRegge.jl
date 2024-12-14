@@ -20,8 +20,8 @@ let bin = 40
     plot(cosθv, calv)
 end
 
-phi_asymmetry_data(bin, cosθ) =
-    phi_asymmetry(ϕ -> abs2(recamp(cosθ, ϕ, data.amps[bin])))
+phi_asymmetry_data(bin, cosθ; start = -π / 2) =
+    phi_asymmetry(ϕ -> abs2(recamp(cosθ, ϕ, data.amps[bin])); start)
 #
 let
     plot()
@@ -32,7 +32,7 @@ let
 end
 
 phi_asymmetry_2d_data(bin) = phi_asymmetry_2d((cosθ, ϕ) -> abs2(recamp(cosθ, ϕ, data.amps[bin])))
-phi_asymmetry_2d_data(52)
+@assert phi_asymmetry_2d_data(52) isa Float64
 
 let
     scatter(bin -> phi_asymmetry_2d_data(bin), 1:5:55, lab = "")
