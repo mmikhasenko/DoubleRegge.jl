@@ -26,49 +26,6 @@ using Statistics
 using Parameters
 
 
-#                                _|                      
-#  _|  _|_|    _|_|      _|_|_|      _|_|_|      _|_|    
-#  _|_|      _|_|_|_|  _|        _|  _|    _|  _|_|_|_|  
-#  _|        _|        _|        _|  _|    _|  _|        
-#  _|          _|_|_|    _|_|_|  _|  _|_|_|      _|_|_|  
-#                                    _|                  
-#                                    _|                  
-
-function intensity(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
-    (((mass_PWs) .. :PWs) .. i) .. :I
-end
-function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
-    phases = alignperiodicsequence(((mass_PWs .. :PWs) .. i) .. :ϕ)
-    phases_adj = meanshiftbyperiod(phases)
-    if mean(phases_adj) < π / 2
-        phases_adj .+= 2π
-    end
-    return phases_adj
-end
-
-@recipe function f(x, mass_PWs::Vector{TwoBodyPartialWaveAs{N, T}} where {N, T},
-    what::Symbol, i::Integer; iref = 2)
-    mass_PWsIϕ = changerepresentation.(mass_PWs; iref = iref)
-    (x, mass_PWsIϕ, what, i)
-end
-
-@recipe function f(x, mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V},
-    what::Symbol, i::Integer)
-    y = []
-    label --> ""
-    L, M = mass_PWs[1].LMs[i]
-    title --> "LM=$L$M"
-    if what == :I
-        intensities = intensity(mass_PWs, i)
-        y = intensities
-    end
-    if what == :ϕ
-        phases_adj = phase(mass_PWs, i)
-        y = phases_adj .* (180 / π)
-    end
-    (x, y)
-end
-
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
 #  _|        _|    _|  _|    _|  _|_|_|_|  

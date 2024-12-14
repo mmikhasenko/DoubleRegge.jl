@@ -22,3 +22,16 @@ function phi_asymmetry_2d(f2d; start = -π / 2)
     R = cuhre((x, f) -> f[1] = f2d(2x[1] - 1, start + π + π * x[2]), 2, 1)[1][1]
     return (L - R) / (L + R)
 end
+
+
+function intensity(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
+    (((mass_PWs) .. :PWs) .. i) .. :I
+end
+function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
+    phases = alignperiodicsequence(((mass_PWs .. :PWs) .. i) .. :ϕ)
+    phases_adj = meanshiftbyperiod(phases)
+    if mean(phases_adj) < π / 2
+        phases_adj .+= 2π
+    end
+    return phases_adj
+end

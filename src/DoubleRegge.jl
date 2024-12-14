@@ -1,20 +1,20 @@
 module DoubleRegge
 
-using Parameters
-using DelimitedFiles
-using QuadGK
 using PartialWaveFunctions
-using GSL
-using Statistics
-using UnROOT
-using StaticArrays
-using LinearAlgebra
-using Cuba
 using SpecialFunctions
-using Optim
+using DelimitedFiles
+using LinearAlgebra
+using StaticArrays
 using Measurements
 using TypedTables
 using Polynomials
+using Statistics
+using Parameters
+using QuadGK
+using UnROOT
+using Optim
+using Cuba
+using GSL
 
 export TwoParticleDiffraction
 export setsystem!
@@ -49,6 +49,7 @@ export integrate_dcosθdϕ
 export arg, amplitude, Iϕ
 include("reconstruction.jl")
 
+export intensity, phase
 export phi_asymmetry, phi_asymmetry_2d
 include("observables.jl")
 
@@ -76,5 +77,9 @@ include("constrainedpw.jl")
 
 export bartlettambiguities
 include("bartlett_ambiguities.jl")
+
+
+using Plots.RecipesBase
+include("plotting_recipes.jl")
 
 end  # module DoubleRegge
