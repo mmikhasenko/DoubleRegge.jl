@@ -10,21 +10,23 @@ using TOML
 # 
 using DoubleRegge
 
-ARGS
+push!(ARGS, "pipeline/fit_settings.toml")
 
 length(ARGS) < 1 && error("provide config file as the first argument!")
-
-settings_file = "pipeline/fit_settings.toml"# ARGS[1]
+settings_file = ARGS[1]
 !isfile(settings_file) && error("no file")
 
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
 
 setsystem!(Symbol(settings["system"]))
+const description = settings["system"] == "compass_ηπ" ? description_ηπ :
+                    (settings["system"] == "compass_η′π" ? description_η′π :
+                     error("unknown system $(settings["system"])"))
 
 # data
-const LMs = getindex.(description_ηπ, 1)
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
+data = read_data(joinpath(@__DIR__, settings["pathtodata"]), description)
+
 amplitudes = [sqrt.(is) .* cis.(ϕs) for (is, ϕs) in zip(data.I, data.ϕ)]
 
 # range

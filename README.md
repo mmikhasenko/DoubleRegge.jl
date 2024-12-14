@@ -2,12 +2,19 @@
  
 https://inspirehep.net/literature/1859521
 
-
 ## Content
+
+- [saving_bootstrap.jl](scripts/saving_bootstrap.jl): bootstrap data, save results in `data/exp_pro/`
+- [against_dimas_data.jl](scripts/against_dimas_data.jl): open Dima's ROOT file, compare with our data
+- [fit_modelS.jl](scripts/fit_modelS.jl): fit the model with extended nll
+- [constrained_projections.jl](scripts/constrained_projections.jl): extended-nll PW analysis of a model
+
+(to be fixed next)
+- [project_model.jl](scripts/project_model.jl)
+- [project_symmetric_model.jl](scripts/project_symmetric_model.jl)
 
 ### Plotting data, Exploration of the model
 
-- [against_dimas_data.jl](scripts/against_dimas_data.jl): open Dima's ROOT file, compare with our data
 - [against_henris_data.jl](scripts/against_henris_data.jl): open Dima's and Henri's ROOT file, compare with our data
 - [shift_etappi.jl](scripts/shift_etappi.jl)
 
@@ -17,18 +24,12 @@ https://inspirehep.net/literature/1859521
 
 ### Constrained Partial Waves
 
-- [constrained_projections.jl](scripts/constrained_projections.jl)
 - [constrained_projections_random_start.jl](scripts/constrained_projections_random_start.jl)
-- [project_model.jl](scripts/project_model.jl)
-- [project_symmetric_model.jl](scripts/project_symmetric_model.jl)
 
 ### Modeling
 
-- [fit_modelS.jl](scripts/fit_modelS.jl):
 - [etapi_mc.jl](scripts/etapi_mc.jl): generate phase space MC, plot with model weights 
-
 - [bootstrap_reconstruction.jl](scripts/bootstrap_reconstruction.jl)
-- [saving_bootstrap.jl](scripts/saving_bootstrap.jl): bootstrap data, save results
 
 ### Technical
 
