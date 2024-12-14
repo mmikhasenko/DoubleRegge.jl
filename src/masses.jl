@@ -1,13 +1,6 @@
-# const mπ = 0.13957; const mπ2 = mπ^2;
-# const mη = 0.54782; const mη2 = mη^2;
-# const mp = 0.938;   const mp2 = mp^2;
-# const s0 = 19^2;
 
-# const mπ = 0.13957018; const mπ2 = mπ^2;
-# const mη = 0.54751; const mη2 = mη^2;
-# const mp = 0.93827203;   const mp2 = mp^2;
-# const s0 = DoubleRegge.mp2 + 2*DoubleRegge.mp*190;
-
+const standard_masses = (
+    mπ = 0.13957018, mp = 0.93827203, mη = 0.54751, mη′ = 0.95778)
 
 @with_kw struct TwoParticleDiffraction
     mb::Float64 = -1.0
@@ -18,16 +11,11 @@
 end
 
 const compass_ηπ = let
-    mπ = 0.13957018
-    mη = 0.54751
-    mp = 0.93827203
+    @unpack mπ, mη, mp = standard_masses
     TwoParticleDiffraction(mb = mπ, mt = mp, mr = mp, m1 = mη, m2 = mπ)
 end
 const compass_η′π = let
-    mπ = 0.13957018
-    mη = 0.54751
-    mp = 0.93827203
-    mη′ = 0.95778
+    @unpack mπ, mp, mη′ = standard_masses
     TwoParticleDiffraction(mb = mπ, mt = mp, mr = mp, m1 = mη′, m2 = mπ)
 end
 
