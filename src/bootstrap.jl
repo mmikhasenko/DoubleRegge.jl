@@ -1,8 +1,3 @@
-# #
-# slice(data, property, bin; ind = 2) = [v[bin, ind] for v in getproperty.(data, property)]
-# slice(data, bin) = getindex.(data, bin)
-# #
-
 function bootstrap_band(_Iϕ; nPoints::Int = 101, nSamples::Int = 1000)
     # x ± δx
     I_with_err = getindex.(_Iϕ.PWs, :I)

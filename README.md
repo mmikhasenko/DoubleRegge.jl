@@ -8,6 +8,8 @@ https://inspirehep.net/literature/1859521
 - [against_dimas_data.jl](scripts/against_dimas_data.jl): open Dima's ROOT file, compare with our data
 - [fit_modelS.jl](scripts/fit_modelS.jl): fit the model with extended nll
 - [constrained_projections.jl](scripts/constrained_projections.jl): extended-nll PW analysis of a model
+- [phi_asymmetry_data.jl](scripts/phi_asymmetry_data.jl): investigate phi asymmetry in data
+- [phi_asymmetry_model.jl](scripts/phi_asymmetry_model.jl): investigate phi asymmetry in model
 
 (to be fixed next)
 - [project_model.jl](scripts/project_model.jl)
@@ -19,8 +21,6 @@ https://inspirehep.net/literature/1859521
 - [shift_etappi.jl](scripts/shift_etappi.jl)
 
 - [alpha_prime_deps.jl](scripts/alpha_prime_deps.jl)
-- [phi_asymmetry_data.jl](scripts/phi_asymmetry_data.jl)
-- [phi_asymmetry_model.jl](scripts/phi_asymmetry_model.jl)
 
 ### Constrained Partial Waves
 
