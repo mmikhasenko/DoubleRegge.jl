@@ -1,0 +1,49 @@
+{
+  "models": [
+    {
+      "fit_results_file": "data/exp_pro/etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign/fit-results.toml",
+      "points": [
+        {
+          "amplitude_im": -0.025555429482759795,
+          "amplitude_re": -1.4763694576317317,
+          "cos_theta": 0.2,
+          "m": 2.45,
+          "phi": 0.3
+        },
+        {
+          "amplitude_im": 3.3753829715897616,
+          "amplitude_re": -0.4032099579444708,
+          "cos_theta": -0.55,
+          "m": 2.75,
+          "phi": -1.1
+        }
+      ],
+      "system": "compass_ηπ",
+      "t2": -0.2,
+      "tag": "etapi_a2Po-f2Po-a2f2-f2f2_opposite-sign"
+    },
+    {
+      "fit_results_file": "data/exp_pro/etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign/fit-results.toml",
+      "points": [
+        {
+          "amplitude_im": -0.08893941363302316,
+          "amplitude_re": -1.361367027207472,
+          "cos_theta": 0.2,
+          "m": 2.45,
+          "phi": 0.3
+        },
+        {
+          "amplitude_im": 4.1567041866342915,
+          "amplitude_re": 5.247232618223447,
+          "cos_theta": -0.55,
+          "m": 2.75,
+          "phi": -1.1
+        }
+      ],
+      "system": "compass_η′π",
+      "t2": -0.2,
+      "tag": "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
+    }
+  ],
+  "schema_version": 1
+}

@@ -19,20 +19,20 @@ settings = Dict(
     "s2_shift" => 30.0,
     "scale_α" => 0.8
 )
-setsystem!(:compass_ηπ)
+const reaction_system = compass_ηπ
 
-function randkinvars(pars, setup = G)
+function randkinvars(pars, reaction_system)
     @unpack abst2min, abst2max, b, s1min, s1max = pars
-    s = setup.s0
-    # s1min = (setup.system.m1 + setup.system.m2)^2
+    s = reaction_system.s0
+    channel = reaction_system.channel
     s1 = s1min + (s1max-s1min)*rand()
     cosθ = 2rand()-1
     ϕ = π*(2rand()-1)
     t2 = -abst2min+log(rand()/b)/b
-    abs(t2) > abst2max && return randkinvars(pars, setup)
+    abs(t2) > abst2max && return randkinvars(pars, reaction_system)
     # 
     A = exp(t2*b)
-    ρ2 = sqrt(λ(s1, setup.system.m1^2, setup.system.m2^2))/s1
+    ρ2 = sqrt(λ(s1, channel.m1^2, channel.m2^2))/s1
     invwt = A
     w = ρ2
     # 
@@ -41,21 +41,20 @@ end
 
 l3 = sixexchages[3][4]
 l4 = sixexchages[4][4]
-model3(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars;
+model3(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars, reaction_system;
     η_forward=sixexchages[3][3],  α′=settings["scale_α"])
-model4(vars) = modelDR(sixexchages[4][1], sixexchages[4][2], vars;
+model4(vars) = modelDR(sixexchages[4][1], sixexchages[4][2], vars, reaction_system;
     η_forward=sixexchages[4][3],  α′=settings["scale_α"])
 # 
-model5(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars;
+model5(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars, reaction_system;
     η_forward=sixexchages[3][3],  α′=settings["scale_α"], s2shift=settings["s2_shift"])
 #
 
-const LMs = compass_ηπ_LMs
-const data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-const amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
+const LMs = reaction_system.LMs
+const data = read_data(settings["pathtodata"], reaction_system)
 # range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
-const fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
+const fitdata = data[fitrangemap]
 
 function guess_bin(mηπ)
     dx = fitdata.x[2]-fitdata.x[1]
@@ -68,7 +67,7 @@ function intensity_data(vars)
     # 
     bin = guess_bin(mηπ)
     bin > length(fitdata) && error("$(mηπ) > $(fitdata.x[end])")
-    return abs2(recamp(cosθ, ϕ, fitdata.amps[bin], LMs))
+    return abs2(recamp(cosθ, ϕ, fitdata.amps[bin]))
 end
 
 model6(vars) = vars.cosθ > 0 ? intensity_data(vars) : 0.0 # forward
@@ -83,15 +82,15 @@ model7(vars) = vars.cosθ < 0 ? intensity_data(vars) : 0.0 # backward
 pars = (abst2min=0.1, abst2max=1.0, b=5,
     s1min=settings["fitrange"][1]^2,
     s1max=settings["fitrange"][2]^2)
-pseudodata = Table([randkinvars(pars) for _ in 1:1_000_000])
+pseudodata = Table([randkinvars(pars, reaction_system) for _ in 1:1_000_000])
 
 # stephist(sqrt.(pseudodata.s1))
 # stephist(sqrt.(pseudodata.s1), weights = pseudodata.w)
 # stephist(pseudodata.t2, weights = pseudodata.w)
 
 pseudodata_with_mw = Table(pseudodata,
-    sπp = DoubleRegge.sπp.(pseudodata),
-    sηp = DoubleRegge.sηp.(pseudodata),
+    sπp = DoubleRegge.sπp.(pseudodata, Ref(reaction_system)),
+    sηp = DoubleRegge.sηp.(pseudodata, Ref(reaction_system)),
     m3 = abs2.(model3.(pseudodata)) .* getproperty.(pseudodata, :w),
     m4 = abs2.(model4.(pseudodata)) .* getproperty.(pseudodata, :w),
     m5 = abs2.(model5.(pseudodata)) .* getproperty.(pseudodata, :w),

@@ -23,7 +23,7 @@ for f in readdir(path_from)
     in_f, out_f = joinpath(path_from, f), joinpath(path_to, f)
     rm = match(regex_phases, f)
     if rm === nothing || iseven(Meta.parse(rm[1]))
-        cp(in_f, out_f)
+        cp(in_f, out_f; force = true)
         continue
     else
         isodd(Meta.parse(rm[1])) &&

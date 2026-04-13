@@ -19,13 +19,11 @@ settings_file = ARGS[1]
 parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
 
-setsystem!(Symbol(settings["system"]))
-const description = settings["system"] == "compass_ηπ" ? description_ηπ :
-                    (settings["system"] == "compass_η′π" ? description_η′π :
-                     error("unknown system $(settings["system"])"))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+const LMs = reaction_system.LMs
 
 # data
-data = read_data(joinpath(@__DIR__, settings["pathtodata"]), description)
+data = read_data(joinpath(@__DIR__, settings["pathtodata"]), reaction_system)
 
 amplitudes = [sqrt.(is) .* cis.(ϕs) for (is, ϕs) in zip(data.I, data.ϕ)]
 
@@ -35,13 +33,13 @@ fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift = settings["s2_shift"])
-intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars = pars)) * q(m)
+const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift = get(settings, "s2_shift", 0.0))
+intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars = pars)) * q(m, reaction_system)
 
 function integrand(cosθ, ϕ, pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps, Ref(LMs)))
     Am = model.(fitdata.x, cosθ, ϕ; pars = pars)
-    Im = abs2.(Am) .* q.(fitdata.x)
+    Im = abs2.(Am) .* q.(fitdata.x, Ref(reaction_system))
     return sum(Im .- Id .* log.(Im))
 end
 ellh(pars) = integrate_dcosθdϕ((cosθ, ϕ) -> integrand(cosθ, ϕ, pars))[1]

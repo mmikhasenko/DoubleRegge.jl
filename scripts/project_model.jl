@@ -30,22 +30,24 @@ settings_file = fitsfolder(tag, "fit-results.toml")
 parsed = TOML.parsefile(settings_file)
 @unpack settings, fit_results = parsed
 
-# 
-setsystem!(Symbol(settings["system"]))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 
 # build model
 const model = build_model(
     sixexchages[settings["exchanges"]],
     settings["t2"],
-    settings["scale_α"])
+    settings["scale_α"],
+    reaction_system;
+    s2shift = get(settings, "s2_shift", 0.0))
 const fixed_pars = fit_results["fit_minimizer"]
+const pfr = fixed_pars
 fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
-fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
-intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m)
+fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m, reaction_system))
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m, reaction_system)
 
 # get data
-data = read_data(settings["pathtodata"], description)
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitdata = filter(data) do x
     inlims(x.x, settings["fitrange"])
@@ -92,15 +94,13 @@ let
     annotate!([(0.6,3,text(s, 10, :left))])
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "contributions_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 # 
 
 # data
-const LMs = compass_ηπ_LMs
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
-data = Table(data, amps=amplitudes)
+const LMs = reaction_system.LMs
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = data[fitrangemap]
@@ -162,8 +162,8 @@ let
     vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "intensity-assymetry_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 # let bin = 1
 #     mηπ = fitdata.x[bin]
@@ -212,8 +212,8 @@ plot(phiasymmplot(1), phiasymmplot(2), size=(900,350), layout=grid(1,2))
 vspan!(sp=1, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "intensity-cosphi_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # cosθ distributions
 let
@@ -234,8 +234,8 @@ let
     plot(ps..., size=(1100,500), layout=grid(3,5))
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "cos-distributions_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 
 
@@ -256,8 +256,8 @@ let
     plot!(xlab="m(ηπ) (GeV)")
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "pw-projections_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 tolab(LM) = "$(LM.L)$(LM.M)"
 
@@ -278,7 +278,7 @@ fOdd_compass = map(x->sum(x .* filtodd), plotdata.I) ./ sum.(plotdata.I)
 fEven_compass = map(x->sum(x .* iszero.(filtodd)), plotdata.I) ./ sum.(plotdata.I)
 
 let
-    plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=settings["tag"])
+    plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=tag)
     plot!(plotdata.x, fHeigher, lab="Higher waves L > 6", lw=2)
     plot!(plotdata.x, fEven, lab="Even waves L ≤ 6", lw=2)
     plot!(plotdata.x, fOdd, lab="Odd waves L ≤ 6", lw=2)
@@ -288,13 +288,13 @@ let
     vspan!(fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("data", "exp_pro", tag,
+        "odd-and-even_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 
 
 let 
-    pathtofolder = joinpath("data", "exp_pro", settings["tag"])
+    pathtofolder = joinpath("data", "exp_pro", tag)
     inputfiles = readdir(pathtofolder)
     outputfile = joinpath(pathtofolder, "_combined.pdf")
     inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
@@ -302,18 +302,18 @@ end
 
 
 produced_files = [
-    "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
+    "intensity-assymetry_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "cos-distributions_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "contributions_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "odd-and-even_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "intensity-cosphi_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "pw-projections_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
     ]
 
 let 
-    pathtofolder = joinpath("data", "exp_pro", settings["tag"])
+    pathtofolder = joinpath("data", "exp_pro", tag)
     # inputfiles = readdir(pathtofolder, join=true)
-    outputfile = joinpath(pathtofolder, "combined_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf")
+    outputfile = joinpath(pathtofolder, "combined_$(tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf")
     # inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
     inputfiles = joinpath.(Ref(pathtofolder), produced_files)
     #

@@ -11,7 +11,8 @@ theme(:wong2;
     xlims = (:auto, :auto), ylims = (:auto, :auto))
 ##
 const data_folder = "data/exp_raw/PLB_shifted"
-const data = read_data(data_folder, description_ηπ);
+const reaction_system = compass_ηπ
+const data = read_data(data_folder, reaction_system);
 const nBins = length(data)
 
 let bin = 40

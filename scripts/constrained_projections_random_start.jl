@@ -17,7 +17,7 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 # 
 
 using DoubleRegge
-setsystem!(:compass_ηπ)
+const reaction_system = compass_ηπ
 
 
 # settings_file = joinpath("data", "exp_pro","fit-results_bottom-Po_Np=3.toml")
@@ -29,27 +29,25 @@ settings = parsed["settings"]
 fit_results = parsed["fit_results"]
 # 
 constrained_pw_projection_fixed_model(m, init_pars) =
-    constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, compass_ηπ_LMs)
+    constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, reaction_system.LMs)
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system)
 const fixed_pars = fit_results["fit_minimizer"]
 fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
-intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m)
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m, reaction_system)
 
 function pw_project_fixed_model(m)
-    amplitude(cosθ,ϕ) = fixed_model(m,cosθ,ϕ)*sqrt(q(m))
+    amplitude(cosθ,ϕ) = fixed_model(m,cosθ,ϕ)*sqrt(q(m, reaction_system))
     pws = [pw_project(amplitude,L,M) for (L,M) in LMs]
     return pws
 end
 #
 
 # data
-const LMs = compass_ηπ_LMs
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
-data = Table(data, amps=amplitudes)
+const LMs = reaction_system.LMs
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = data[fitrangemap]
@@ -88,7 +86,7 @@ function constrained_pw_projection_fixed_model!(s::samplePWA, N)
 end
 
 # create the structures
-getsamplePWA(m) = samplePWA((cosθ,ϕ)->model(m,cosθ,ϕ; pars=fixed_pars)*sqrt(q(m)), LMs)
+getsamplePWA(m) = samplePWA((cosθ,ϕ)->model(m,cosθ,ϕ; pars=fixed_pars)*sqrt(q(m, reaction_system)), LMs)
 
 # calculate: long ~ 10h
 structures = getsamplePWA.(plotdata.x)

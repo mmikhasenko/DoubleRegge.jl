@@ -2,7 +2,7 @@ using DrWatson
 @quickactivate "DoubleRegge"
 
 using DoubleRegge
-setsystem!(:compass_ηπ)
+const reaction_system = compass_ηπ
 
 using UnROOT
 using StaticArrays
@@ -46,15 +46,15 @@ invariants(pb, pr, pπ, pη) =
 voi = [invariants(v.pb, v.pr, v.pπ, v.pη) for v in vof];
 
 stephist(ϕTY.(vof))
-stephist(cosθ1.(voi))
-histogram2d(sqrt.(getproperty.(voi, :s1)), cosθ1.(voi))
+stephist(cosθ1.(voi, Ref(reaction_system)))
+histogram2d(sqrt.(getproperty.(voi, :s1)), cosθ1.(voi, Ref(reaction_system)))
 
 vok = [(ϕ = ϕ, cosθ = cosθ, mηπ = mηπ) for
        (ϕ, cosθ, mηπ) in zip(ϕTY.(vof), cosθ1.(voi), sqrt.(getproperty.(voi, :s1)))];
 
 function selected_distr(vars; mηπ_bin_range = error("range"))
     sample = filter(v -> mηπ_bin_range[1] < sqrt(v.s1) < mηπ_bin_range[2], vars)
-    return cosθ1.(sample)
+    return cosθ1.(sample, Ref(reaction_system))
 end
 
 const Δx = 0.04;

@@ -11,7 +11,6 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 using LaTeXStrings
 # 
 using DoubleRegge
-setsystem!(:compass_ηπ)
 # 
 using Statistics
 using LinearAlgebra
@@ -31,21 +30,32 @@ parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
 fit_results = parsed["fit_results"]
 const pfr = fit_results["fit_minimizer"]
+const output_tag = get(settings, "tag", splitext(basename(settings_file))[1])
 
-# 
-setsystem!(Symbol(settings["system"]))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift=settings["s2_shift"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift=get(settings, "s2_shift", 0.0))
 fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
-fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
+fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))
 # 
 function pw_project_fixed(m::Float64,L,M)
     amplitude(cosθ,ϕ) = fixed_model_sqrtq(m,cosθ,ϕ)
     return pw_project(amplitude,L,M)
 end
+
+# data
+const LMs = reaction_system.LMs
+data = read_data(settings["pathtodata"], reaction_system)
+# fit range
+fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
+fitdata = data[fitrangemap]
+# plot
+plotmap = map(x->inlims(x.x, (2.2,3.0)), data)
+plotdata = data[plotmap]
+
 # 
 model_integral(m; pars=pfr)          = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)))[1]
 model_integral_forward(m; pars=pfr)  = integrate_dcosθdϕ((cosθ,ϕ)->abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars)),(0,1))[1]
@@ -78,21 +88,8 @@ let
 end
 savefig(
     joinpath("pipeline", "plots",
-        "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "contributions_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 # 
-
-# data
-const LMs = compass_ηπ_LMs
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
-data = Table(data, amps=amplitudes)
-# fit range
-fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
-fitdata = data[fitrangemap]
-# plot 
-plotmap = map(x->inlims(x.x, (2.2,3.0)), data)
-plotdata = data[plotmap]
-
 
 # ellh
 fit_results["fit_minimum"]
@@ -148,7 +145,7 @@ let
 end
 savefig(
     joinpath("pipeline", "plots",
-        "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "intensity-assymetry_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 # let bin = 1
 #     mηπ = fitdata.x[bin]
@@ -198,7 +195,7 @@ vspan!(sp=1, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 vspan!(sp=2, fitdata.x[[1,end]], lab="", α=0.1, seriescolor=7)
 savefig(
     joinpath("pipeline", "plots",
-        "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "intensity-cosphi_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 
 # cosθ distributions
 let
@@ -220,7 +217,7 @@ let
 end
 savefig(
     joinpath("pipeline", "plots",
-        "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "cos-distributions_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 
 
@@ -242,7 +239,7 @@ let
 end
 savefig(
     joinpath("pipeline", "plots",
-        "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "pw-projections_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 tolab(LM) = "$(LM.L)$(LM.M)"
 
@@ -263,7 +260,7 @@ fOdd_compass = map(x->sum(x .* filtodd), plotdata.I) ./ sum.(plotdata.I)
 fEven_compass = map(x->sum(x .* iszero.(filtodd)), plotdata.I) ./ sum.(plotdata.I)
 
 let
-    plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=settings["tag"])
+    plot(ylab="fraction", xlab="m(ηπ) (GeV)", size=(500,350), title=output_tag)
     plot!(plotdata.x, fHeigher, lab="Higher waves L > 6", lw=2)
     plot!(plotdata.x, fEven, lab="Even waves L ≤ 6", lw=2)
     plot!(plotdata.x, fOdd, lab="Odd waves L ≤ 6", lw=2)
@@ -274,7 +271,7 @@ let
 end
 savefig(
     joinpath("pipeline", "plots",
-        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+        "odd-and-even_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
 #
 
 
@@ -287,18 +284,18 @@ end
 
 
 produced_files = [
-    "intensity-assymetry_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "cos-distributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "contributions_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "intensity-cosphi_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
-    "pw-projections_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
+    "intensity-assymetry_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "cos-distributions_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "contributions_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "odd-and-even_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "intensity-cosphi_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf",
+    "pw-projections_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"
     ]
 
 let 
     pathtofolder = joinpath("pipeline", "plots")
     # inputfiles = readdir(pathtofolder, join=true)
-    outputfile = joinpath(pathtofolder, "combined_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf")
+    outputfile = joinpath(pathtofolder, "combined_$(output_tag)_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf")
     # inputfiles = filter(f->splitext(f)[2]==".pdf" && f!=outputfile, inputfiles)
     inputfiles = joinpath.(Ref(pathtofolder), produced_files)
     #

@@ -1,7 +1,7 @@
-function modelS(x, vars)
+function modelS(x, vars, system)
     @unpack s, s1, cosθ, ϕ, t2 = vars
-    _t1 = t1(vars); _tπ = tπ(vars)
-    K = Kfactor(vars)
+    _t1 = t1(vars, system); _tπ = tπ(vars, system)
+    K = Kfactor(vars, system)
     #
     α(t) = 0.5 + 0.9*t
     β = 9.0;

@@ -10,11 +10,11 @@ import Plots.PlotMeasures.mm
 theme(:wong2; size = (500, 350), bottom_margin = 5mm)
 # 
 using DoubleRegge
-setsystem!(:compass_ηπ)
 # 
 using Statistics
 using LinearAlgebra
 
+const tag = "symmetric_model"
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
 #  _|        _|    _|  _|    _|  _|_|_|_|  
@@ -22,18 +22,17 @@ using LinearAlgebra
 #    _|_|_|    _|_|      _|_|_|    _|_|_|  
 
 const pfr = [0.5, -0.5]
-# 
-setsystem!(:compass_ηπ)
+const reaction_system = compass_ηπ
 
 # fit
 const exchanges = sixexchages[[1, 3]]
-const model = build_model(exchanges, -0.2, 0.8)
+const model = build_model(exchanges, -0.2, 0.8, reaction_system)
 fixed_model(m, cosθ, ϕ; pars = pfr) = model(m, cosθ, ϕ; pars = pars)
-fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) = fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m))
+fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) = fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars = pfr) = abs2(fixed_model_sqrtq(m, cosθ, ϕ; pars = pars))
 # 
 function pw_project_fixed_model(m, used_LMs)
-    amplitude(cosθ, ϕ) = fixed_model_sqrtq(m, cosθ, ϕ) * sqrt(q(m))
+    amplitude(cosθ, ϕ) = fixed_model_sqrtq(m, cosθ, ϕ) * sqrt(q(m, reaction_system))
     @show used_LMs
     return map(used_LMs) do (L, M)
         pw_project(amplitude, L, M)
@@ -41,13 +40,13 @@ function pw_project_fixed_model(m, used_LMs)
 end
 
 # 
-model_integral(m)          = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)))[1] * q(m)
-model_integral_forward(m)  = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (0, 1))[1] * q(m)
-model_integral_backward(m) = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (-1, 0))[1] * q(m)
+model_integral(m)          = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)))[1] * q(m, reaction_system)
+model_integral_forward(m)  = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (0, 1))[1] * q(m, reaction_system)
+model_integral_backward(m) = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (-1, 0))[1] * q(m, reaction_system)
 
 # data
 const data_folder = "data/exp_raw/PLB_shifted"
-data = read_data(data_folder, description_ηπ)
+data = read_data(data_folder, reaction_system)
 # const LMs = compass_ηπ_LMs
 # data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
 # amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
@@ -58,6 +57,7 @@ data = read_data(data_folder, description_ηπ)
 # # plot 
 plotmap = map(x -> inlims(x.x, (2.2, 3.0)), data)
 plotdata = data[plotmap]
+fitdata = plotdata
 
 # intensity
 intensity_in_bins = model_integral.(plotdata.x)
@@ -70,7 +70,7 @@ data_backward_in_bins = map(a -> quadgk(cosθ -> dNdcosθ(cosθ, a), -1, 0)[1], 
 # 
 
 # # projections
-const LMs = getindex.(description_ηπ, 1)
+const LMs = reaction_system.LMs
 pw_projections = map(m -> pw_project_fixed_model(m, LMs), data.x[plotmap])
 pw_intensities = map(x -> abs2.(x), pw_projections)
 #
@@ -109,7 +109,7 @@ plot(b1, b2, layout = grid(2, 1), size = (400, 600), link = :x)
 savefig(joinpath("plots", "pws_symmetric_model.pdf"))
 
 let
-    plot(ylab = "fraction", xlab = "m(ηπ) (GeV)", size = (500, 350), title = settings["tag"])
+    plot(ylab = "fraction", xlab = "m(ηπ) (GeV)", size = (500, 350), title = tag)
     plot!(plotdata.x, fHeigher, lab = "Higher waves L > 6", lw = 2)
     plot!(plotdata.x, fEven, lab = "Even waves L ≤ 6", lw = 2)
     plot!(plotdata.x, fOdd, lab = "Odd waves L ≤ 6", lw = 2)
@@ -119,5 +119,4 @@ let
     vspan!(fitdata.x[[1, end]], lab = "", α = 0.1, seriescolor = 7)
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("plots", "odd-and-even_$(tag).pdf"))
