@@ -1,34 +1,11 @@
 using DrWatson
 @quickactivate "DoubleRegge"
 
+using JSON
 using TOML
 using DoubleRegge
 
 const OUTPUT_FILE = joinpath(@__DIR__, "..", "test", "fixtures", "default_model_crosscheck.json")
-
-function json_escape(text::AbstractString)
-    replace(text,
-        "\\" => "\\\\",
-        "\"" => "\\\"",
-        "\n" => "\\n",
-        "\r" => "\\r",
-        "\t" => "\\t")
-end
-
-function json_value(x::AbstractString)
-    "\"" * json_escape(x) * "\""
-end
-
-json_value(x::Symbol) = json_value(String(x))
-json_value(x::Bool) = x ? "true" : "false"
-json_value(x::Real) = repr(Float64(x))
-json_value(x::Nothing) = "null"
-json_value(values::AbstractVector) = "[" * join(json_value.(values), ", ") * "]"
-
-function json_value(dict::AbstractDict)
-    entries = ["$(json_value(String(key))): $(json_value(value))" for (key, value) in pairs(dict)]
-    "{\n" * join("  " .* entries, ",\n") * "\n}"
-end
 
 function model_fixture(tag, reaction_system, points)
     parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", tag, "fit-results.toml"))
@@ -72,8 +49,8 @@ fixture = Dict(
 )
 
 open(OUTPUT_FILE, "w") do io
-    write(io, json_value(fixture))
-    write(io, "\n")
+    JSON.print(io, fixture, 2)
+    write(io, '\n')
 end
 
 println("wrote $(OUTPUT_FILE)")

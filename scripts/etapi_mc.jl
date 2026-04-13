@@ -29,7 +29,7 @@ function randkinvars(pars, reaction_system)
     cosθ = 2rand()-1
     ϕ = π*(2rand()-1)
     t2 = -abst2min+log(rand()/b)/b
-    abs(t2) > abst2max && return randkinvars(pars, setup)
+    abs(t2) > abst2max && return randkinvars(pars, reaction_system)
     # 
     A = exp(t2*b)
     ρ2 = sqrt(λ(s1, channel.m1^2, channel.m2^2))/s1

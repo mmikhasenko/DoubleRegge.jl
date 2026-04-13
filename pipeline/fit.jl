@@ -20,6 +20,7 @@ parsed = TOML.parsefile(settings_file)
 settings = parsed["settings"]
 
 const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+const LMs = reaction_system.LMs
 
 # data
 data = read_data(joinpath(@__DIR__, settings["pathtodata"]), reaction_system)
