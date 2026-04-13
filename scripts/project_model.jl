@@ -30,22 +30,22 @@ settings_file = fitsfolder(tag, "fit-results.toml")
 parsed = TOML.parsefile(settings_file)
 @unpack settings, fit_results = parsed
 
-# 
-setsystem!(Symbol(settings["system"]))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 
 # build model
 const model = build_model(
     sixexchages[settings["exchanges"]],
     settings["t2"],
-    settings["scale_α"])
+    settings["scale_α"],
+    reaction_system)
 const fixed_pars = fit_results["fit_minimizer"]
 fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
-fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
-intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m)
+fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m, reaction_system))
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m, reaction_system)
 
 # get data
-data = read_data(settings["pathtodata"], description)
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitdata = filter(data) do x
     inlims(x.x, settings["fitrange"])
@@ -97,10 +97,8 @@ savefig(
 # 
 
 # data
-const LMs = compass_ηπ_LMs
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
-data = Table(data, amps=amplitudes)
+const LMs = reaction_system.LMs
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = data[fitrangemap]

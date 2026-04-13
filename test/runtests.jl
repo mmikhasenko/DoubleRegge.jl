@@ -1,6 +1,9 @@
 using DoubleRegge
 using Test
 
+include("evaluate_modelDR.jl")
+include("test_default_model_crosscheck.jl")
+
 t0 = TwoBodyPartialWaves([(1,1),(2,1),(3,1)], [1, 2-3im, -4-4im])
 
 @testset "TwoBodyPartialWaves: changerepresentation" begin

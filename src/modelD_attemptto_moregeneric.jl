@@ -34,22 +34,22 @@ const sixexchages = [
     TopBottomExchanges(α_ℙ,  α_f2, false, "ℙ/f2" )]
 #
 
-modelDR(exchs::TopBottomExchanges, vars, α′) =
-    modelDR(exchs.α_top, exchs.α_bot, vars;
+modelDR(exchs::TopBottomExchanges, vars, reaction_system, α′) =
+    modelDR(exchs.α_top, exchs.α_bot, vars, reaction_system;
     exchs.η_forward,  α′=0.9)
 #
-function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
+function modelDR(α1oft::trajectory, α2oft::trajectory, vars, reaction_system;
     η_forward::Bool=true,  α′=0.9)
     # 
     @unpack s, s1, cosθ, ϕ, t2 = vars
     #
-    t = η_forward ? t1(vars) : tπ(vars)
-    s2 = η_forward ? sπp(vars) : sηp(vars)
+    t = η_forward ? t1(vars, reaction_system) : tπ(vars, reaction_system)
+    s2 = η_forward ? sπp(vars, reaction_system) : sηp(vars, reaction_system)
     #
     α1 = α1oft(t)
     α2 = α2oft(t2)
     #
-    K = Kfactor(vars)
+    K = Kfactor(vars, reaction_system)
     prefactor = -K*sf_gamma(1-α1)*sf_gamma(1-α2) *
         (α′*s1)^α1 * (α′*s2)^α2 / (α′*s)
     #
@@ -70,10 +70,10 @@ function modelDR(α1oft::trajectory, α2oft::trajectory, vars;
 end
 
 
-function build_model(exchanges, t2::Float64, scalar_α, s0=G.s0)
+function build_model(exchanges, t2::Float64, scalar_α, reaction_system)
     function model(m,cosθ,ϕ; pars)
-        vars = (s = s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
-        generator = (p*modelDR(t[1], t[2], vars; η_forward=t[3], α′=scalar_α)
+        vars = (s = reaction_system.s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = t2)
+        generator = (p*modelDR(t[1], t[2], vars, reaction_system; η_forward=t[3], α′=scalar_α)
             for (p,t) in zip(pars, exchanges))
         return mysum(typeof(1im*pars[1]), generator)
     end

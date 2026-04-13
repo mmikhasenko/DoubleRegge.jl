@@ -55,6 +55,8 @@ function read_data(path2data, description)
     Table(x = x, Iϕ = Iϕ, amps = A)
 end
 
+read_data(path2data, system::ReactionSystem) = read_data(path2data, system.description)
+
 
 rand(v::Measurement{T} where T) = v.val + randn() * v.err
 function rand(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I, :ϕ), Tuple{Measurement{V}, Measurement{V}}}} where N where V)
@@ -69,24 +71,3 @@ end
 #     randA = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(randI,randϕ)]
 #     return randA
 # end
-
-
-
-# 
-const description_ηπ = [
-    (1, 1) => ("EtaPi-1mp.txt", "EtaPi-Ph1mp.txt"),
-    (2, 1) => ("EtaPi-2pp.txt", "nothing"),
-    (2, 2) => ("EtaPi-2ppM2.txt", "EtaPi-Ph2ppM2.txt"),
-    (3, 1) => ("EtaPi-3mp.txt", "EtaPi-Ph3mp.txt"),
-    (4, 1) => ("EtaPi-4pp.txt", "EtaPi-Ph4pp.txt"),
-    (5, 1) => ("EtaPi-5mp.txt", "EtaPi-Ph5mp.txt"),
-    (6, 1) => ("EtaPi-6pp.txt", "EtaPi-Ph6pp.txt"),
-]
-const description_η′π = [
-    (1, 1) => ("EtapPi-1mp.txt", "EtapPi-Ph1mp.txt"),
-    (2, 1) => ("EtapPi-2pp.txt", "nothing"),
-    (3, 1) => ("EtapPi-3mp.txt", "EtapPi-Ph3mp.txt"),
-    (4, 1) => ("EtapPi-4pp.txt", "EtapPi-Ph4pp.txt"),
-    (5, 1) => ("EtapPi-5mp.txt", "EtapPi-Ph5mp.txt"),
-    (6, 1) => ("EtapPi-6pp.txt", "EtapPi-Ph6pp.txt"),
-]

@@ -17,8 +17,8 @@ using Cuba
 using GSL
 
 export TwoParticleDiffraction
-export setsystem!
-export G
+export ReactionSystem
+export compass_ηπ, compass_η′π
 include("masses.jl")
 
 export modelS

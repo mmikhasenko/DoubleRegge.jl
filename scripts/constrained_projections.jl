@@ -44,33 +44,22 @@ settings_file = fitsfolder(tag, "fit-results.toml")
 parsed = TOML.parsefile(settings_file)
 @unpack settings, fit_results = parsed
 
-# 
-setsystem!(Symbol(settings["system"]))
-description = Dict()
-xlab = ""
-
-if settings["system"] == "compass_ηπ"
-    description = description_ηπ
-    xlab = L"m_{\eta\pi}\,\,(\mathrm{GeV})"
-elseif settings["system"] == "compass_η′π"
-    description = description_η′π
-    xlab = L"m_{\eta'\pi}\,\,(\mathrm{GeV})"
-else
-    error("unknown system $(settings["system"])")
-end
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+xlab = settings["system"] == "compass_ηπ" ? L"m_{\eta\pi}\,\,(\mathrm{GeV})" : L"m_{\eta'\pi}\,\,(\mathrm{GeV})"
 
 
 # build model
 const model = build_model(
     sixexchages[settings["exchanges"]],
     settings["t2"],
-    settings["scale_α"])
+    settings["scale_α"],
+    reaction_system)
 const fixed_pars = fit_results["fit_minimizer"]
 fixed_model(m, cosθ, ϕ) = model(m, cosθ, ϕ; pars = fixed_pars)
-intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m)
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m, reaction_system)
 
 # get data
-data = read_data(settings["pathtodata"], description)
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitdata = filter(data) do x
     inlims(x.x, settings["fitrange"])
@@ -83,7 +72,7 @@ end
 # 
 const used_LMs = Array(data[1].Iϕ.LMs)
 function pw_project_fixed_model(m)
-    amplitude(cosθ, ϕ) = fixed_model(m, cosθ, ϕ) * sqrt(q(m))
+    amplitude(cosθ, ϕ) = fixed_model(m, cosθ, ϕ) * sqrt(q(m, reaction_system))
     pws = [pw_project(amplitude, L, M) for (L, M) in used_LMs]
     return pws
 end

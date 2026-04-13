@@ -33,15 +33,10 @@ settings_file = fitsfolder(tag, "settings.toml")
 !isfile(settings_file) && error("no file")
 settings = TOML.parsefile(settings_file)
 
-# 
-setsystem!(Symbol(settings["system"]))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # get data
-description = settings["system"] == "compass_ηπ" ? description_ηπ :
-              (settings["system"] == "compass_η′π" ? description_η′π :
-               error("unknown system $(settings["system"])"))
-#    
-data = read_data(settings["pathtodata"], description)
+data = read_data(settings["pathtodata"], reaction_system)
 fitdata = filter(data) do x
     inlims(x.x, settings["fitrange"])
 end
@@ -50,13 +45,14 @@ end
 const model = build_model(
     sixexchages[settings["exchanges"]],
     settings["t2"],
-    settings["scale_α"])
+    settings["scale_α"],
+    reaction_system)
 #
 # ellh fit functions
 function integrand(cosθ, ϕ, pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps))
     Am = model.(fitdata.x, cosθ, ϕ; pars = pars)
-    Im = abs2.(Am) .* q.(fitdata.x)
+    Im = abs2.(Am) .* q.(fitdata.x, Ref(reaction_system))
     # @show pars
     return sum(Im .- Id .* log.(Im))
 end

@@ -10,33 +10,67 @@ const standard_masses = (
     m2::Float64 = -1.0
 end
 
-const compass_ηπ = let
+const channel_compass_ηπ = let
     @unpack mπ, mη, mp = standard_masses
     TwoParticleDiffraction(mb = mπ, mt = mp, mr = mp, m1 = mη, m2 = mπ)
 end
-const compass_η′π = let
+const channel_compass_η′π = let
     @unpack mπ, mp, mη′ = standard_masses
     TwoParticleDiffraction(mb = mπ, mt = mp, mr = mp, m1 = mη′, m2 = mπ)
 end
 
-mutable struct setup
-    system::TwoParticleDiffraction
+const description_ηπ = [
+    (1, 1) => ("EtaPi-1mp.txt", "EtaPi-Ph1mp.txt"),
+    (2, 1) => ("EtaPi-2pp.txt", "nothing"),
+    (2, 2) => ("EtaPi-2ppM2.txt", "EtaPi-Ph2ppM2.txt"),
+    (3, 1) => ("EtaPi-3mp.txt", "EtaPi-Ph3mp.txt"),
+    (4, 1) => ("EtaPi-4pp.txt", "EtaPi-Ph4pp.txt"),
+    (5, 1) => ("EtaPi-5mp.txt", "EtaPi-Ph5mp.txt"),
+    (6, 1) => ("EtaPi-6pp.txt", "EtaPi-Ph6pp.txt"),
+]
+const description_η′π = [
+    (1, 1) => ("EtapPi-1mp.txt", "EtapPi-Ph1mp.txt"),
+    (2, 1) => ("EtapPi-2pp.txt", "nothing"),
+    (3, 1) => ("EtapPi-3mp.txt", "EtapPi-Ph3mp.txt"),
+    (4, 1) => ("EtapPi-4pp.txt", "EtapPi-Ph4pp.txt"),
+    (5, 1) => ("EtapPi-5mp.txt", "EtapPi-Ph5mp.txt"),
+    (6, 1) => ("EtapPi-6pp.txt", "EtapPi-Ph6pp.txt"),
+]
+
+struct ReactionSystem
+    name::Symbol
+    channel::TwoParticleDiffraction
     s0::Float64
+    description::Vector{Pair{Tuple{Int, Int}, Tuple{String, String}}}
+    LMs::Vector{Tuple{Int, Int}}
 end
 
-const G = setup(TwoParticleDiffraction(), 0.0)
+ReactionSystem(
+    channel::TwoParticleDiffraction,
+    s0::Real;
+    name::Symbol = :custom,
+    description::Vector{Pair{Tuple{Int, Int}, Tuple{String, String}}} = Pair{Tuple{Int, Int}, Tuple{String, String}}[],
+) = ReactionSystem(name, channel, Float64(s0), description, getindex.(description, 1))
 
-setsystem!(tpd::TwoParticleDiffraction, s0::T where T <: Real) = (G.system = tpd; G.s0 = s0)
-#
 const compass_Eb = 190
 const compass_mb = 0.93827203
 const compass_s0 = compass_mb^2 + 2 * compass_mb * compass_Eb
-# 
-function setsystem!(s::Symbol)
-    s == :compass_ηπ && setsystem!(compass_ηπ, compass_s0)
-    s == :compass_η′π && setsystem!(compass_η′π, compass_s0)
-    return
-end
+
+const compass_ηπ = ReactionSystem(
+    channel_compass_ηπ,
+    compass_s0;
+    name = :compass_ηπ,
+    description = description_ηπ,
+)
+const compass_η′π = ReactionSystem(
+    channel_compass_η′π,
+    compass_s0;
+    name = :compass_η′π,
+    description = description_η′π,
+)
+
+diffraction(system::ReactionSystem) = system.channel
+diffraction(system::TwoParticleDiffraction) = system
 
 #    _|_|_|  _|    _|    _|_|_|    _|_|_|  _|  _|_|  
 #  _|_|      _|    _|  _|    _|  _|    _|  _|_|      

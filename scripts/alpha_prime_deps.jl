@@ -10,10 +10,11 @@ using DelimitedFiles
 theme(:wong; size=(500,350))
 #
 #
+const reaction_system = compass_ηπ
 
 function Model_of_cosθ(cosθ; mηπ=2.2, α′s=(0.9,0.9,0.9))
     f(ϕ) = abs2(modelDR(α_ℙ, α_ℙ,
-        (s = DoubleRegge.s0, s1 = mηπ^2, cosθ = cosθ, ϕ = ϕ, t2 = -0.2);
+        (s = reaction_system.s0, s1 = mηπ^2, cosθ = cosθ, ϕ = ϕ, t2 = -0.2), reaction_system;
         η_forward=true,  α′s = α′s))
     return quadgk(f, -π, π)[1]
 end

@@ -11,7 +11,6 @@ theme(:wong2; size=(500,350), bottom_margin=5mm)
 using LaTeXStrings
 # 
 using DoubleRegge
-setsystem!(:compass_ηπ)
 # 
 using Statistics
 using LinearAlgebra
@@ -32,14 +31,13 @@ settings = parsed["settings"]
 fit_results = parsed["fit_results"]
 const pfr = fit_results["fit_minimizer"]
 
-# 
-setsystem!(Symbol(settings["system"]))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"]; s2shift=settings["s2_shift"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift=settings["s2_shift"])
 fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
-fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m))
+fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))
 # 
 function pw_project_fixed(m::Float64,L,M)
@@ -82,10 +80,8 @@ savefig(
 # 
 
 # data
-const LMs = compass_ηπ_LMs
-data = Table(x_IδI_ϕδϕ_compass_ηπ(settings["pathtodata"]))
-amplitudes = [sqrt.(is) .* cis.(ϕs) for (is,ϕs) in zip(data.I, data.ϕ)]
-data = Table(data, amps=amplitudes)
+const LMs = reaction_system.LMs
+data = read_data(settings["pathtodata"], reaction_system)
 # fit range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
 fitdata = data[fitrangemap]

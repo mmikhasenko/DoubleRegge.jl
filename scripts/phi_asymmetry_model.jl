@@ -17,12 +17,13 @@ const exchanges = [(α_a2, α_ℙ, true), (α_a2, α_f2, true),
     (α_f2, α_ℙ, false), (α_f2, α_f2, false),
     (α_ℙ, α_ℙ, false), (α_ℙ, α_f2, false)];
 const Np = length(exchanges)
+const reaction_system = compass_ηπ
 
 
 function model(mηπ, cosθ, ϕ; pars)
-    vars = (s = DoubleRegge.compass_s0, s1 = mηπ^2,
+    vars = (s = reaction_system.s0, s1 = mηπ^2,
         cosθ = cosθ, ϕ = ϕ, t2 = -0.2)
-    return sum(p * modelDR(t[1], t[2], vars; η_forward = t[3])
+    return sum(p * modelDR(t[1], t[2], vars, reaction_system; η_forward = t[3])
                for (p, t) in zip(pars, exchanges))
 end
 # 
