@@ -25,6 +25,7 @@ jobs:
         uses: julia-actions/install-juliaup@v3.1.1
         with:
           channel: "1.11.5"
+          juliaup-version: "1.19.10"
         if: steps.julia_in_path.outcome != 'success'
       - name: Use Julia cache
         uses: julia-actions/cache@v3.0.2

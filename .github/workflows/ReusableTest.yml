@@ -41,6 +41,7 @@ jobs:
       - uses: julia-actions/install-juliaup@v3.1.1
         with:
           channel: ${{ inputs.version }}
+          juliaup-version: "1.19.10"
       - name: Use Julia cache
         uses: julia-actions/cache@v3.0.2
       - uses: julia-actions/julia-buildpkg@v1
