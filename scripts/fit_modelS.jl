@@ -46,7 +46,8 @@ const model = build_model(
     sixexchages[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
-    reaction_system)
+    reaction_system;
+    s2shift = get(settings, "s2_shift", 0.0))
 #
 # ellh fit functions
 function integrand(cosθ, ϕ, pars)

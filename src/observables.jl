@@ -13,7 +13,6 @@ where w1, and w2 are weights in front of sin(ϕ)/√π, and sin(2ϕ)/√π, resp
 function phi_asymmetry(f; start = -π / 2)
     L = quadgk(f, start + π, start + 2π)[1]
     R = quadgk(f, start, start + π)[1]
-    @show L, R
     return (L - R) / (L + R)
 end
 

@@ -33,7 +33,7 @@ fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift = settings["s2_shift"])
+const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift = get(settings, "s2_shift", 0.0))
 intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars = pars)) * q(m, reaction_system)
 
 function integrand(cosθ, ϕ, pars)

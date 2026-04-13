@@ -54,7 +54,7 @@ const LMs = reaction_system.LMs
 const data = read_data(settings["pathtodata"], reaction_system)
 # range
 fitrangemap = map(x->inlims(x.x, settings["fitrange"]), data)
-const fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
+const fitdata = data[fitrangemap]
 
 function guess_bin(mηπ)
     dx = fitdata.x[2]-fitdata.x[1]
@@ -67,7 +67,7 @@ function intensity_data(vars)
     # 
     bin = guess_bin(mηπ)
     bin > length(fitdata) && error("$(mηπ) > $(fitdata.x[end])")
-    return abs2(recamp(cosθ, ϕ, fitdata.amps[bin], LMs))
+    return abs2(recamp(cosθ, ϕ, fitdata.amps[bin]))
 end
 
 model6(vars) = vars.cosθ > 0 ? intensity_data(vars) : 0.0 # forward

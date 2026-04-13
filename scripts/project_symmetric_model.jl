@@ -14,6 +14,7 @@ using DoubleRegge
 using Statistics
 using LinearAlgebra
 
+const tag = "symmetric_model"
 #                            _|            
 #    _|_|_|    _|_|      _|_|_|    _|_|    
 #  _|        _|    _|  _|    _|  _|_|_|_|  
@@ -56,6 +57,7 @@ data = read_data(data_folder, reaction_system)
 # # plot 
 plotmap = map(x -> inlims(x.x, (2.2, 3.0)), data)
 plotdata = data[plotmap]
+fitdata = plotdata
 
 # intensity
 intensity_in_bins = model_integral.(plotdata.x)
@@ -107,7 +109,7 @@ plot(b1, b2, layout = grid(2, 1), size = (400, 600), link = :x)
 savefig(joinpath("plots", "pws_symmetric_model.pdf"))
 
 let
-    plot(ylab = "fraction", xlab = "m(ηπ) (GeV)", size = (500, 350), title = settings["tag"])
+    plot(ylab = "fraction", xlab = "m(ηπ) (GeV)", size = (500, 350), title = tag)
     plot!(plotdata.x, fHeigher, lab = "Higher waves L > 6", lw = 2)
     plot!(plotdata.x, fEven, lab = "Even waves L ≤ 6", lw = 2)
     plot!(plotdata.x, fOdd, lab = "Odd waves L ≤ 6", lw = 2)
@@ -117,5 +119,4 @@ let
     vspan!(fitdata.x[[1, end]], lab = "", α = 0.1, seriescolor = 7)
 end
 savefig(
-    joinpath("data", "exp_pro", settings["tag"],
-        "odd-and-even_$(settings["tag"])_Np=$(length(settings["exchanges"]))_alpha=$(settings["scale_α"]).pdf"))
+    joinpath("plots", "odd-and-even_$(tag).pdf"))
