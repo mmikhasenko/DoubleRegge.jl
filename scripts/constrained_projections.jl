@@ -49,13 +49,15 @@ xlab = settings["system"] == "compass_ηπ" ? L"m_{\eta\pi}\,\,(\mathrm{GeV})" :
 
 
 # build model
-const model = build_model(
+const model = DoubleReggeModel(
     sixexchages[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
-    reaction_system)
-const fixed_pars = fit_results["fit_minimizer"]
-fixed_model(m, cosθ, ϕ) = model(m, cosθ, ϕ; pars = fixed_pars)
+    reaction_system,
+    fit_results["fit_minimizer"];
+    s2shift = get(settings, "s2_shift", 0.0),
+)
+fixed_model(m, cosθ, ϕ) = amplitude(model, m, cosθ, ϕ)
 intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m, reaction_system)
 
 # get data

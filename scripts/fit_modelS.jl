@@ -42,17 +42,20 @@ fitdata = filter(data) do x
 end
 
 # build model
-const model = build_model(
+const model = DoubleReggeModel(
     sixexchages[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
-    reaction_system;
-    s2shift = get(settings, "s2_shift", 0.0))
+    reaction_system,
+    settings["initial_pars"];
+    s2shift = get(settings, "s2_shift", 0.0),
+)
 #
 # ellh fit functions
 function integrand(cosθ, ϕ, pars)
+    trial_model = with_parameters(model, pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps))
-    Am = model.(fitdata.x, cosθ, ϕ; pars = pars)
+    Am = amplitude.(Ref(trial_model), fitdata.x, cosθ, ϕ)
     Im = abs2.(Am) .* q.(fitdata.x, Ref(reaction_system))
     # @show pars
     return sum(Im .- Id .* log.(Im))

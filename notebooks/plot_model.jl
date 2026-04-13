@@ -44,19 +44,22 @@ end
 setsystem!(Symbol(settings["system"]))
 
 # ╔═╡ d900c75f-23be-4000-a365-a4bd7706ef7b
-const model = build_model(
-    sixexchages[settings["exchanges"]],
-    settings["t2"],
-	settings["scale_α"]);
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # ╔═╡ cb933425-f0e9-49ae-8aac-00d17f236525
-const fixed_pars = fit_results["fit_minimizer"];
+const model = DoubleReggeModel(
+    sixexchages[settings["exchanges"]],
+    settings["t2"],
+	settings["scale_α"],
+    reaction_system,
+    fit_results["fit_minimizer"];
+    s2shift = get(settings, "s2_shift", 0.0));
 
 # ╔═╡ 6ad94d49-2e9f-43a6-ae50-c3f06809310b
-fixed_model(m, cosθ, ϕ) = model(m, cosθ, ϕ; pars = fixed_pars)
+fixed_model(m, cosθ, ϕ) = amplitude(model, m, cosθ, ϕ)
 
 # ╔═╡ bf32445c-fbfd-4809-8452-f1e17394d4a3
-intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m)
+intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m, reaction_system)
 
 # ╔═╡ 9cf4002c-c678-40e2-9520-46cb5443e2fd
 plot(cosθ -> intensity(2.2, cosθ, 0.3), -1, 1)

@@ -11,25 +11,26 @@ function model_fixture(tag, reaction_system, points)
     parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", tag, "fit-results.toml"))
     settings = parsed["settings"]
     fit_results = parsed["fit_results"]
-    model = build_model(
+    model = DoubleReggeModel(
         sixexchages[settings["exchanges"]],
         settings["t2"],
         settings["scale_α"],
-        reaction_system;
+        reaction_system,
+        fit_results["fit_minimizer"];
         s2shift=get(settings, "s2_shift", 0.0),
     )
     Dict(
         "tag" => tag,
         "system" => String(reaction_system.name),
         "fit_results_file" => joinpath("data", "exp_pro", tag, "fit-results.toml"),
-        "t2" => settings["t2"],
+        "t2" => model.t2,
         "points" => [
             Dict(
                 "m" => point[:m],
                 "cos_theta" => point[:cosθ],
                 "phi" => point[:ϕ],
-                "amplitude_re" => real(model(point[:m], point[:cosθ], point[:ϕ]; pars=fit_results["fit_minimizer"])),
-                "amplitude_im" => imag(model(point[:m], point[:cosθ], point[:ϕ]; pars=fit_results["fit_minimizer"])),
+                "amplitude_re" => real(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
+                "amplitude_im" => imag(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
             ) for point in points
         ],
     )

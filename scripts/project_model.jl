@@ -115,15 +115,15 @@ const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 
 # build model
-const model = build_model(
+const model = DoubleReggeModel(
     sixexchages[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
-    reaction_system;
+    reaction_system,
+    fit_results["fit_minimizer"];
     s2shift=get(settings, "s2_shift", 0.0))
-const fixed_pars = fit_results["fit_minimizer"]
-const pfr = fixed_pars
-fixed_model(m, cosθ, ϕ; pars=pfr) = model(m, cosθ, ϕ; pars)
+const pfr = model.pars
+fixed_model(m, cosθ, ϕ; pars=pfr) = amplitude(with_parameters(model, pars), m, cosθ, ϕ)
 fixed_model_sqrtq(m, cosθ, ϕ; pars=pfr) = fixed_model(m, cosθ, ϕ; pars=pars) * sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ)) * q(m, reaction_system)
 
@@ -140,9 +140,6 @@ plotdata = filter(data) do x
 end
 plotdata = plotdata[select_bin_indices(length(plotdata); stride=BIN_STRIDE, max_bins=MAX_PLOT_BINS)]
 
-const exchanges = sixexchages[settings["exchanges"]]
-
-# 
 function pw_project_fixed(m::Float64, L, M)
     amplitude(cosθ, ϕ) = fixed_model_sqrtq(m, cosθ, ϕ)
     return pw_project(amplitude, L, M)
@@ -163,8 +160,8 @@ if !SKIP_CONTRIBUTIONS
     let
         m = sum(contribution_matrix.(fitdata.x))
         heatmap([mi == 0.0 ? NaN : mi for mi in m],
-            xticks=(1:Np, getindex.(exchanges, 4)),
-            yticks=(1:Np, getindex.(exchanges, 4)), colorbar=false)
+            xticks=(1:Np, getproperty.(model.exchanges, :label)),
+            yticks=(1:Np, getproperty.(model.exchanges, :label)), colorbar=false)
         # 
         mn = m ./ sum(m)
         for i in CartesianIndices(m)
@@ -174,7 +171,7 @@ if !SKIP_CONTRIBUTIONS
         end
         plot!(size=(400, 350), title="contributions of different diagrams")
         ellh = fit_results["fit_minimum"]
-        s = prod("$l: $v,\n" for (l, v) in zip(getindex.(exchanges, 4), round.(pfr, digits=2)))
+        s = prod("$l: $v,\n" for (l, v) in zip(getproperty.(model.exchanges, :label), round.(pfr, digits=2)))
         s *= "extLLH: " * string(round(ellh, digits=1))
         annotate!([(0.6, 3, text(s, 10, :left))])
     end

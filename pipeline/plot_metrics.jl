@@ -36,8 +36,15 @@ const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift=get(settings, "s2_shift", 0.0))
-fixed_model(m,cosθ,ϕ; pars=pfr) = model(m,cosθ,ϕ; pars=pars)
+const model = DoubleReggeModel(
+    exchanges,
+    settings["t2"],
+    settings["scale_α"],
+    reaction_system,
+    pfr;
+    s2shift = get(settings, "s2_shift", 0.0),
+)
+fixed_model(m,cosθ,ϕ; pars=pfr) = amplitude(with_parameters(model, pars), m, cosθ, ϕ)
 fixed_model_sqrtq(m,cosθ,ϕ; pars=pfr) = fixed_model(m,cosθ,ϕ; pars=pars)*sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars=pfr) = abs2(fixed_model_sqrtq(m,cosθ,ϕ; pars=pars))
 # 
@@ -68,11 +75,11 @@ integral_interf(m,i,j) = model_integral(m; pars=pfr.*δ(i)+pfr.*δ(j)) -
     model_integral(m; pars=pfr.*δ(j));
 # 
 contribution_matrix(m) = [(i>j ? 0 : integral_interf(m,i,j)/(i==j ? 2 : 1)) for i in 1:Np, j in 1:Np]
-let
-    m = sum(contribution_matrix.(fitdata.x))
-    heatmap([mi==0.0 ? NaN : mi for mi in m],
-        xticks = (1:Np, getindex.(exchanges,4)),
-        yticks = (1:Np, getindex.(exchanges,4)), colorbar=false)
+    let
+        m = sum(contribution_matrix.(fitdata.x))
+        heatmap([mi==0.0 ? NaN : mi for mi in m],
+        xticks = (1:Np, getproperty.(model.exchanges, :label)),
+        yticks = (1:Np, getproperty.(model.exchanges, :label)), colorbar=false)
     # 
     mn = m ./ sum(m)
     for i in Iterators.CartesianIndices(m)
@@ -82,7 +89,7 @@ let
     end
     plot!(size=(400,350), title="contributions of different diagrams")
     ellh = fit_results["fit_minimum"]
-    s = prod("$l: $v,\n" for (l,v) in zip(getindex.(exchanges,4), round.(pfr, digits=2))) 
+    s = prod("$l: $v,\n" for (l,v) in zip(getproperty.(model.exchanges, :label), round.(pfr, digits=2))) 
     s *= "extLLH: "*string(round(ellh, digits=1))
     annotate!([(0.6,3,text(s, 10, :left))])
 end

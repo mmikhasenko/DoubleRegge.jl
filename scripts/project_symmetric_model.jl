@@ -26,8 +26,8 @@ const reaction_system = compass_ηπ
 
 # fit
 const exchanges = sixexchages[[1, 3]]
-const model = build_model(exchanges, -0.2, 0.8, reaction_system)
-fixed_model(m, cosθ, ϕ; pars = pfr) = model(m, cosθ, ϕ; pars = pars)
+const model = DoubleReggeModel(exchanges, -0.2, 0.8, reaction_system, pfr)
+fixed_model(m, cosθ, ϕ; pars = pfr) = amplitude(with_parameters(model, pars), m, cosθ, ϕ)
 fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) = fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars = pfr) = abs2(fixed_model_sqrtq(m, cosθ, ϕ; pars = pars))
 # 

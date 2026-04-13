@@ -20,6 +20,14 @@ let
 end
 
 let
+    exchange = ReggeExchange(α_a2, α_ℙ, true, "a2/ℙ")
+    vars = (s = ηπ_system.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π/4, t2 = -0.45)
+    direct = modelDR(α_a2, α_ℙ, vars, ηπ_system; η_forward = true, α′ = 0.85, s2shift = 0.1)
+    typed = modelDR(exchange, vars, ηπ_system; α′ = 0.85, s2shift = 0.1)
+    @test typed ≈ direct
+end
+
+let
     vars = (s = ηπ_system.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π/4, t2 = -0.45)
     @test DoubleRegge.sπp(vars, ηπ_system) != DoubleRegge.sηp(vars, ηπ_system)
 end
@@ -48,3 +56,15 @@ let
     # [println("$k: $c $v") for (k,c,v) in zip(keys(contv),contv,vincv)]
     @test sum(abs2(c-v) for (c,v) in zip(contv,vincv)) < 0.1
 end  #
+
+@testset "DoubleReggeModel parameter binding" begin
+    pars = [1.0, -0.5]
+    model = DoubleReggeModel(sixexchages[1:2], -0.2, 0.8, ηπ_system, pars; s2shift = 0.05)
+    updated = with_parameters(model, [2.0, 3.0])
+    @test updated.pars == [2.0, 3.0]
+    @test updated.exchanges === model.exchanges
+    @test updated.t2 == model.t2
+    @test updated.scalar_α == model.scalar_α
+    @test updated.reaction_system === model.reaction_system
+    @test updated.s2shift == model.s2shift
+end

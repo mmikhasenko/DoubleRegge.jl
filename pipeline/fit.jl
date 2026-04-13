@@ -33,12 +33,20 @@ fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system; s2shift = get(settings, "s2_shift", 0.0))
-intensity(m, cosθ, ϕ; pars) = abs2(model(m, cosθ, ϕ; pars = pars)) * q(m, reaction_system)
+const model = DoubleReggeModel(
+    exchanges,
+    settings["t2"],
+    settings["scale_α"],
+    reaction_system,
+    settings["initial_pars"];
+    s2shift = get(settings, "s2_shift", 0.0),
+)
+intensity(m, cosθ, ϕ; pars) = abs2(amplitude(with_parameters(model, pars), m, cosθ, ϕ)) * q(m, reaction_system)
 
 function integrand(cosθ, ϕ, pars)
+    trial_model = with_parameters(model, pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps, Ref(LMs)))
-    Am = model.(fitdata.x, cosθ, ϕ; pars = pars)
+    Am = amplitude.(Ref(trial_model), fitdata.x, cosθ, ϕ)
     Im = abs2.(Am) .* q.(fitdata.x, Ref(reaction_system))
     return sum(Im .- Id .* log.(Im))
 end

@@ -33,9 +33,16 @@ constrained_pw_projection_fixed_model(m, init_pars) =
 
 # fit
 const exchanges = sixexchages[settings["exchanges"]]
-const model = build_model(exchanges, settings["t2"], settings["scale_α"], reaction_system)
-const fixed_pars = fit_results["fit_minimizer"]
-fixed_model(m,cosθ,ϕ) = model(m,cosθ,ϕ; pars=fixed_pars)
+const model = DoubleReggeModel(
+    exchanges,
+    settings["t2"],
+    settings["scale_α"],
+    reaction_system,
+    fit_results["fit_minimizer"];
+    s2shift = get(settings, "s2_shift", 0.0),
+)
+const fixed_pars = model.pars
+fixed_model(m,cosθ,ϕ) = amplitude(model, m, cosθ, ϕ)
 intensity(m, cosθ, ϕ) = abs2(fixed_model(m, cosθ, ϕ))*q(m, reaction_system)
 
 function pw_project_fixed_model(m)
@@ -86,7 +93,7 @@ function constrained_pw_projection_fixed_model!(s::samplePWA, N)
 end
 
 # create the structures
-getsamplePWA(m) = samplePWA((cosθ,ϕ)->model(m,cosθ,ϕ; pars=fixed_pars)*sqrt(q(m, reaction_system)), LMs)
+getsamplePWA(m) = samplePWA((cosθ,ϕ)->amplitude(model, m, cosθ, ϕ)*sqrt(q(m, reaction_system)), LMs)
 
 # calculate: long ~ 10h
 structures = getsamplePWA.(plotdata.x)

@@ -9,14 +9,15 @@ function build_model_from_fixture_entry(entry)
     settings = parsed["settings"]
     fit_results = parsed["fit_results"]
     reaction_system = getproperty(DoubleRegge, Symbol(entry["system"]))
-    model = build_model(
+    model = DoubleReggeModel(
         sixexchages[settings["exchanges"]],
         settings["t2"],
         settings["scale_α"],
-        reaction_system;
+        reaction_system,
+        fit_results["fit_minimizer"];
         s2shift = get(settings, "s2_shift", 0.0),
     )
-    return model, reaction_system, fit_results["fit_minimizer"]
+    return model, reaction_system
 end
 
 @testset "Default model JSON cross-check" begin
@@ -25,18 +26,18 @@ end
     @test length(fixture["models"]) == 2
 
     for model_entry in fixture["models"]
-        model, reaction_system, pars = build_model_from_fixture_entry(model_entry)
+        model, reaction_system = build_model_from_fixture_entry(model_entry)
         for point in model_entry["points"]
-            amplitude = model(point["m"], point["cos_theta"], point["phi"]; pars = pars)
+            amp = amplitude(model, point["m"], point["cos_theta"], point["phi"])
             expected = point["amplitude_re"] + point["amplitude_im"] * im
-            @test isapprox(amplitude, expected; rtol = 1e-12, atol = 1e-12)
+            @test isapprox(amp, expected; rtol = 1e-12, atol = 1e-12)
 
             vars = (
                 s = reaction_system.s0,
                 s1 = point["m"]^2,
                 cosθ = point["cos_theta"],
                 ϕ = point["phi"],
-                t2 = model_entry["t2"],
+                t2 = model.t2,
             )
             @test isfinite(abs2(modelDR(α_a2, α_ℙ, vars, reaction_system; η_forward = true)))
         end
