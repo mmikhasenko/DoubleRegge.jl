@@ -27,6 +27,9 @@ on:
       codecov_token:
         required: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   test:
     name: Julia ${{ inputs.version }} - ${{ inputs.os }} - ${{ inputs.arch }} - ${{ github.event_name }}
@@ -34,13 +37,12 @@ jobs:
     continue-on-error: ${{ inputs.allow_failure }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - uses: actions/checkout@v5
+      - uses: julia-actions/install-juliaup@v3.1.1
         with:
-          version: ${{ inputs.version }}
-          arch: ${{ inputs.arch }}
+          channel: ${{ inputs.version }}
       - name: Use Julia cache
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3.0.2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
