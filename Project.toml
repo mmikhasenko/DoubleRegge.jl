@@ -1,7 +1,7 @@
 name = "DoubleRegge"
 uuid = "f838507a-7273-4d1c-8b9b-41446bbb5741"
-authors = ["Misha Mikhasenko <mikhail.mikhasenko@gmail.com>"]
 version = "0.1.0"
+authors = ["Misha Mikhasenko <mikhail.mikhasenko@gmail.com>"]
 
 [deps]
 Cuba = "8a292aeb-7a57-582c-b821-06e4c11590b1"
@@ -29,6 +29,7 @@ TypedTables = "9d95f2ec-7b3d-5a63-8d20-e2491e220bb9"
 UnROOT = "3cd96dde-e98d-4713-81e9-a4a1b0235ce9"
 
 [compat]
+LaTeXStrings = "1"
 Plots = "1.40.9"
 Test = "1.11.0"
 UnROOT = "0.10.33"
