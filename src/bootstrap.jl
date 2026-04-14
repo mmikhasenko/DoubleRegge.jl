@@ -19,7 +19,7 @@ function bootstrap_band(_Iϕ; nPoints::Int = 101, nSamples::Int = 1000)
         A′ = changerepresentation(Iϕ′)
         dNdcosθ.(cosθv, Ref(A′))
     end
-    qls = [quantile(getindex.(bstp, i), [0.16, 0.84]) for i in 1:length(bstp[1])]
+    qls = [quantile(getindex.(bstp, i), [0.16, 0.84]) for i = 1:length(bstp[1])]
     return getindex.(qls, 1), getindex.(qls, 2)
 end
 

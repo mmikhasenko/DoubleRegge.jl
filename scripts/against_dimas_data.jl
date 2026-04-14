@@ -36,12 +36,13 @@ vof = let
     NamedTuple{varnames}.(v)
 end;
 
-invariants(pb, pr, pπ, pη) =
-    (s0 = invmasssq(pr + pπ + pη),
-        s1 = invmasssq(pη + pπ),
-        s2 = invmasssq(pπ + pr),
-        t1 = invmasssq(pb - pη),
-        t2 = invmasssq(pb - pη - pπ))
+invariants(pb, pr, pπ, pη) = (
+    s0 = invmasssq(pr + pπ + pη),
+    s1 = invmasssq(pη + pπ),
+    s2 = invmasssq(pπ + pr),
+    t1 = invmasssq(pb - pη),
+    t2 = invmasssq(pb - pη - pπ),
+)
 
 voi = [invariants(v.pb, v.pr, v.pπ, v.pη) for v in vof];
 
@@ -49,8 +50,10 @@ stephist(ϕTY.(vof))
 stephist(cosθ1.(voi, Ref(reaction_system)))
 histogram2d(sqrt.(getproperty.(voi, :s1)), cosθ1.(voi, Ref(reaction_system)))
 
-vok = [(ϕ = ϕ, cosθ = cosθ, mηπ = mηπ) for
-       (ϕ, cosθ, mηπ) in zip(ϕTY.(vof), cosθ1.(voi), sqrt.(getproperty.(voi, :s1)))];
+vok = [
+    (ϕ = ϕ, cosθ = cosθ, mηπ = mηπ) for
+    (ϕ, cosθ, mηπ) in zip(ϕTY.(vof), cosθ1.(voi), sqrt.(getproperty.(voi, :s1)))
+];
 
 function selected_distr(vars; mηπ_bin_range = error("range"))
     sample = filter(v -> mηπ_bin_range[1] < sqrt(v.s1) < mηπ_bin_range[2], vars)
@@ -67,9 +70,21 @@ const main = readdlm(datadir("exp_pro", "main_point.txt"));
 let
     ps = map(41:56) do i
         norm = sum(main[i, :]) / 100 * (1 - (-1))
-        plot(range(-1, 1, length = 100), main[i, :] / norm, lab = (i != 56 ? "" : "corr. PLB PWA rec."), lw = 3) # , α=0.5
-        stephist!(selected_distr(voi; mηπ_bin_range = bin_range(i)), bins = range(-1, 1, length = 100), st = :stephist, norm = true,
-            lab = (i != 56 ? "" : "Dima's MC"), c = :black, title = "bin: $(round(x0 + (2i-1)*Δx/2, digits=2))")
+        plot(
+            range(-1, 1, length = 100),
+            main[i, :] / norm,
+            lab = (i != 56 ? "" : "corr. PLB PWA rec."),
+            lw = 3,
+        ) # , α=0.5
+        stephist!(
+            selected_distr(voi; mηπ_bin_range = bin_range(i)),
+            bins = range(-1, 1, length = 100),
+            st = :stephist,
+            norm = true,
+            lab = (i != 56 ? "" : "Dima's MC"),
+            c = :black,
+            title = "bin: $(round(x0 + (2i-1)*Δx/2, digits=2))",
+        )
     end
     plot(ps..., size = (2000, 1700))
 end

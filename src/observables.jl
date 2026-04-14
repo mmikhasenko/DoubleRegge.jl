@@ -23,10 +23,10 @@ function phi_asymmetry_2d(f2d; start = -π / 2)
 end
 
 
-function intensity(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
+function intensity(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}, i::Integer)
     (((mass_PWs) .. :PWs) .. i) .. :I
 end
-function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}, i::Integer)
+function phase(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}, i::Integer)
     phases = alignperiodicsequence(((mass_PWs .. :PWs) .. i) .. :ϕ)
     phases_adj = meanshiftbyperiod(phases)
     if mean(phases_adj) < π / 2

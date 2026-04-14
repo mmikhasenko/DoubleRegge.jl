@@ -16,9 +16,14 @@ using DelimitedFiles
 # 
 
 using Plots
-theme(:wong2;
-    frame = :box, grid = false, lab = "",
-    xlims = (:auto, :auto), ylims = (:auto, :auto))
+theme(
+    :wong2;
+    frame = :box,
+    grid = false,
+    lab = "",
+    xlims = (:auto, :auto),
+    ylims = (:auto, :auto),
+)
 
 
 # 
@@ -42,17 +47,20 @@ fitdata = filter(data) do x
 end
 
 # build model
-const model = build_model(
-    sixexchages[settings["exchanges"]],
+const model = DoubleReggeModel(
+    six_exchanges[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
-    reaction_system;
-    s2shift = get(settings, "s2_shift", 0.0))
+    reaction_system,
+    settings["initial_pars"];
+    s2shift = get(settings, "s2_shift", 0.0),
+)
 #
 # ellh fit functions
 function integrand(cosθ, ϕ, pars)
+    trial_model = with_parameters(model, pars)
     Id = abs2.(recamp.(cosθ, ϕ, fitdata.amps))
-    Am = model.(fitdata.x, cosθ, ϕ; pars = pars)
+    Am = amplitude.(Ref(trial_model), fitdata.x, cosθ, ϕ)
     Im = abs2.(Am) .* q.(fitdata.x, Ref(reaction_system))
     # @show pars
     return sum(Im .- Id .* log.(Im))
@@ -64,21 +72,24 @@ integrand′(cosθ, ϕ, pars) = ForwardDiff.gradient(p -> integrand(cosθ, ϕ, p
 ellh′(pars) = integrate_dcosθdϕ((cosθ, ϕ) -> integrand′(cosθ, ϕ, pars), dims = length(pars))
 
 # fit
-ft = Optim.optimize(ellh, settings["initial_pars"], BFGS(),
-    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15))
+ft = Optim.optimize(
+    ellh,
+    settings["initial_pars"],
+    BFGS(),
+    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15),
+)
 #
 
 # save results
 fit_results = Dict(
     "fit_converged" => ft.x_converged,
     "fit_minimizer" => ft.minimizer,
-    "fit_minimum" => ft.minimum)
+    "fit_minimum" => ft.minimum,
+)
 
 output_name = fitsfolder(tag, "fit-results.toml");
 
 open(output_name, "w") do io
-    TOML.print(io, Dict(
-        "settings" => settings,
-        "fit_results" => fit_results))
+    TOML.print(io, Dict("settings" => settings, "fit_results" => fit_results))
 end
 

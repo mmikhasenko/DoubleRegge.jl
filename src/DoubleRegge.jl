@@ -56,8 +56,10 @@ include("observables.jl")
 export α_a2, α_f2, α_ℙ
 export modelDR
 export trajectory
-export sixexchages
-export build_model
+export ReggeExchange
+export DoubleReggeModel
+export with_parameters
+export six_exchanges
 include("modelD.jl")
 
 export bootstrap_band, slice

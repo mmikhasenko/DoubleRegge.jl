@@ -25,10 +25,11 @@ const pfr = [0.5, -0.5]
 const reaction_system = compass_ηπ
 
 # fit
-const exchanges = sixexchages[[1, 3]]
-const model = build_model(exchanges, -0.2, 0.8, reaction_system)
-fixed_model(m, cosθ, ϕ; pars = pfr) = model(m, cosθ, ϕ; pars = pars)
-fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) = fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m, reaction_system))
+const exchanges = six_exchanges[[1, 3]]
+const model = DoubleReggeModel(exchanges, -0.2, 0.8, reaction_system, pfr)
+fixed_model(m, cosθ, ϕ; pars = pfr) = amplitude(with_parameters(model, pars), m, cosθ, ϕ)
+fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) =
+    fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m, reaction_system))
 intensity(m, cosθ, ϕ; pars = pfr) = abs2(fixed_model_sqrtq(m, cosθ, ϕ; pars = pars))
 # 
 function pw_project_fixed_model(m, used_LMs)
@@ -40,9 +41,14 @@ function pw_project_fixed_model(m, used_LMs)
 end
 
 # 
-model_integral(m)          = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)))[1] * q(m, reaction_system)
-model_integral_forward(m)  = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (0, 1))[1] * q(m, reaction_system)
-model_integral_backward(m) = integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (-1, 0))[1] * q(m, reaction_system)
+model_integral(m) =
+    integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)))[1] * q(m, reaction_system)
+model_integral_forward(m) =
+    integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (0, 1))[1] *
+    q(m, reaction_system)
+model_integral_backward(m) =
+    integrate_dcosθdϕ((cosθ, ϕ) -> abs2(fixed_model(m, cosθ, ϕ)), (-1, 0))[1] *
+    q(m, reaction_system)
 
 # data
 const data_folder = "data/exp_raw/PLB_shifted"
@@ -96,14 +102,26 @@ end ./ tot_compass
 data_pw_sums = [sum(getindex.(fitdata.I, i)) for (i, LM) in enumerate(LMs)]
 data_pw_sums = [data_pw_sums..., 0]
 
-b1 = bar(data_pw_sums, yaxis = nothing,
-    xticks = (1:8, [tolab.(LMs)..., "higher"]), xlab = "LM", ylab = "intensity", lab = "")
+b1 = bar(
+    data_pw_sums,
+    yaxis = nothing,
+    xticks = (1:8, [tolab.(LMs)..., "higher"]),
+    xlab = "LM",
+    ylab = "intensity",
+    lab = "",
+)
 # 
 model_pw_sums = [sum(getindex.(pw_intensities[6:end], i)) for (i, LM) in enumerate(LMs)]
 model_pw_sums = [model_pw_sums..., sum(intensity_in_bins .- sum.(pw_intensities))]
 
-b2 = bar(model_pw_sums, yaxis = nothing,
-    xticks = (1:8, [tolab.(LMs)..., "higher"]), xlab = "LM", ylab = "intensity", lab = "")
+b2 = bar(
+    model_pw_sums,
+    yaxis = nothing,
+    xticks = (1:8, [tolab.(LMs)..., "higher"]),
+    xlab = "LM",
+    ylab = "intensity",
+    lab = "",
+)
 #
 plot(b1, b2, layout = grid(2, 1), size = (400, 600), link = :x)
 savefig(joinpath("plots", "pws_symmetric_model.pdf"))
@@ -113,10 +131,23 @@ let
     plot!(plotdata.x, fHeigher, lab = "Higher waves L > 6", lw = 2)
     plot!(plotdata.x, fEven, lab = "Even waves L ≤ 6", lw = 2)
     plot!(plotdata.x, fOdd, lab = "Odd waves L ≤ 6", lw = 2)
-    scatter!(plotdata.x, xerr = (plotdata.x[2] - plotdata.x[1]) / 2, fEven_compass, lab = "", mc = 2, ms = 3)
-    scatter!(plotdata.x, xerr = (plotdata.x[2] - plotdata.x[1]) / 2, fOdd_compass, lab = "", mc = 3, ms = 3)
+    scatter!(
+        plotdata.x,
+        xerr = (plotdata.x[2] - plotdata.x[1]) / 2,
+        fEven_compass,
+        lab = "",
+        mc = 2,
+        ms = 3,
+    )
+    scatter!(
+        plotdata.x,
+        xerr = (plotdata.x[2] - plotdata.x[1]) / 2,
+        fOdd_compass,
+        lab = "",
+        mc = 3,
+        ms = 3,
+    )
     plot!(ylims = (0, 1), leg = :left)
     vspan!(fitdata.x[[1, end]], lab = "", α = 0.1, seriescolor = 7)
 end
-savefig(
-    joinpath("plots", "odd-and-even_$(tag).pdf"))
+savefig(joinpath("plots", "odd-and-even_$(tag).pdf"))

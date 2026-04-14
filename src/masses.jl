@@ -1,6 +1,5 @@
 
-const standard_masses = (
-    mπ = 0.13957018, mp = 0.93827203, mη = 0.54751, mη′ = 0.95778)
+const standard_masses = (mπ = 0.13957018, mp = 0.93827203, mη = 0.54751, mη′ = 0.95778)
 
 @with_kw struct TwoParticleDiffraction
     mb::Float64 = -1.0
@@ -41,15 +40,18 @@ struct ReactionSystem
     name::Symbol
     channel::TwoParticleDiffraction
     s0::Float64
-    description::Vector{Pair{Tuple{Int, Int}, Tuple{String, String}}}
-    LMs::Vector{Tuple{Int, Int}}
+    description::Vector{Pair{Tuple{Int,Int},Tuple{String,String}}}
+    LMs::Vector{Tuple{Int,Int}}
 end
 
 ReactionSystem(
     channel::TwoParticleDiffraction,
     s0::Real;
     name::Symbol = :custom,
-    description::Vector{Pair{Tuple{Int, Int}, Tuple{String, String}}} = Pair{Tuple{Int, Int}, Tuple{String, String}}[],
+    description::Vector{Pair{Tuple{Int,Int},Tuple{String,String}}} = Pair{
+        Tuple{Int,Int},
+        Tuple{String,String},
+    }[],
 ) = ReactionSystem(name, channel, Float64(s0), description, getindex.(description, 1))
 
 const compass_Eb = 190

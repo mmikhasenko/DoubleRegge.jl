@@ -1,10 +1,11 @@
-struct TwoBodyPartialWaves{N, T}
-    LMs::SVector{N, Tuple{Int, Int}}
-    PWs::SVector{N, T}
+struct TwoBodyPartialWaves{N,T}
+    LMs::SVector{N,Tuple{Int,Int}}
+    PWs::SVector{N,T}
 end
 
-const TwoBodyPartialWaveAs{N, T} = TwoBodyPartialWaves{N, T} where N where T <: Number
-const TwoBodyPartialWaveIϕs{N, V} = TwoBodyPartialWaves{N, NamedTuple{(:I, :ϕ), V}} where N where V
+const TwoBodyPartialWaveAs{N,T} = TwoBodyPartialWaves{N,T} where {N} where {T<:Number}
+const TwoBodyPartialWaveIϕs{N,V} =
+    TwoBodyPartialWaves{N,NamedTuple{(:I, :ϕ),V}} where {N} where {V}
 
 TwoBodyPartialWaves(LMs::Vector, PWs::Vector) =
     (N = length(LMs); TwoBodyPartialWaves(SVector{N}(LMs), SVector{N}(PWs)))
@@ -15,13 +16,15 @@ changerepresentation(expansion::TwoBodyPartialWaveAs; iref) =
     TwoBodyPartialWaves(expansion.LMs, Iϕ.(expansion.PWs; ref = expansion.PWs[iref]))
 # 
 
-strip_errors(_Iϕ::TwoBodyPartialWaveIϕs{Tuple{Measurement{Float64}, Measurement{Float64}}}) =
+strip_errors(_Iϕ::TwoBodyPartialWaveIϕs{Tuple{Measurement{Float64},Measurement{Float64}}}) =
     TwoBodyPartialWaves(
         _Iϕ.LMs,
-        NamedTuple{(:I, :ϕ)}.(zip(
-            getproperty.(getindex.(_Iϕ.PWs, :I), :val),
-            getproperty.(getindex.(_Iϕ.PWs, :ϕ), :val),
-        )) |> SVector,
+        NamedTuple{(:I, :ϕ)}.(
+            zip(
+                getproperty.(getindex.(_Iϕ.PWs, :I), :val),
+                getproperty.(getindex.(_Iϕ.PWs, :ϕ), :val),
+            ),
+        ) |> SVector,
     )
 
 function read_data(path2data, description)
@@ -35,7 +38,9 @@ function read_data(path2data, description)
         table_I = readdlm(joinpath(path2data, filename_I))
         x, I, δI = table_I[:, 1], table_I[:, 2], table_I[:, 3]
         #
-        table_ϕ = filename_ϕ != "nothing" ? readdlm(joinpath(path2data, filename_ϕ)) : zeros(nBins, 3)
+        table_ϕ =
+            filename_ϕ != "nothing" ? readdlm(joinpath(path2data, filename_ϕ)) :
+            zeros(nBins, 3)
         table_ϕ .*= π / 180
         ϕ, δϕ = table_ϕ[:, 2], table_ϕ[:, 3]
         #
@@ -58,8 +63,13 @@ end
 read_data(path2data, system::ReactionSystem) = read_data(path2data, system.description)
 
 
-rand(v::Measurement{T} where T) = v.val + randn() * v.err
-function rand(expansion::TwoBodyPartialWaves{N, NamedTuple{(:I, :ϕ), Tuple{Measurement{V}, Measurement{V}}}} where N where V)
+rand(v::Measurement{T} where {T}) = v.val + randn() * v.err
+function rand(
+    expansion::TwoBodyPartialWaves{
+        N,
+        NamedTuple{(:I, :ϕ),Tuple{Measurement{V},Measurement{V}}},
+    } where {N} where {V},
+)
     I′ = rand.(expansion.PWs .. :I)
     ϕ′ = rand.(expansion.PWs .. :ϕ)
     TwoBodyPartialWaves(expansion.LMs, NamedTuple{(:I, :ϕ)}.(zip(I′, ϕ′)))
