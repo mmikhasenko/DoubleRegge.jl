@@ -12,7 +12,7 @@ theme(:wong2;
 #
 #
 # fit
-const exchanges = sixexchages
+const exchanges = six_exchanges
 const labs = getproperty.(exchanges, :label)
 const Np = length(exchanges)
 const reaction_system = compass_ηπ

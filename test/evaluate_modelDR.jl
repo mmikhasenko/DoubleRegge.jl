@@ -59,7 +59,7 @@ end  #
 
 @testset "DoubleReggeModel parameter binding" begin
     pars = [1.0, -0.5]
-    model = DoubleReggeModel(sixexchages[1:2], -0.2, 0.8, ηπ_system, pars; s2shift = 0.05)
+    model = DoubleReggeModel(six_exchanges[1:2], -0.2, 0.8, ηπ_system, pars; s2shift = 0.05)
     updated = with_parameters(model, [2.0, 3.0])
     @test updated.pars == [2.0, 3.0]
     @test updated.exchanges === model.exchanges

@@ -39,15 +39,15 @@ function randkinvars(pars, reaction_system)
     return (; s, s1, cosθ, ϕ, t2, w, invwt)
 end
 
-l3 = sixexchages[3][4]
-l4 = sixexchages[4][4]
-model3(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars, reaction_system;
-    η_forward=sixexchages[3][3],  α′=settings["scale_α"])
-model4(vars) = modelDR(sixexchages[4][1], sixexchages[4][2], vars, reaction_system;
-    η_forward=sixexchages[4][3],  α′=settings["scale_α"])
+l3 = six_exchanges[3][4]
+l4 = six_exchanges[4][4]
+model3(vars) = modelDR(six_exchanges[3][1], six_exchanges[3][2], vars, reaction_system;
+    η_forward=six_exchanges[3][3],  α′=settings["scale_α"])
+model4(vars) = modelDR(six_exchanges[4][1], six_exchanges[4][2], vars, reaction_system;
+    η_forward=six_exchanges[4][3],  α′=settings["scale_α"])
 # 
-model5(vars) = modelDR(sixexchages[3][1], sixexchages[3][2], vars, reaction_system;
-    η_forward=sixexchages[3][3],  α′=settings["scale_α"], s2shift=settings["s2_shift"])
+model5(vars) = modelDR(six_exchanges[3][1], six_exchanges[3][2], vars, reaction_system;
+    η_forward=six_exchanges[3][3],  α′=settings["scale_α"], s2shift=settings["s2_shift"])
 #
 
 const LMs = reaction_system.LMs

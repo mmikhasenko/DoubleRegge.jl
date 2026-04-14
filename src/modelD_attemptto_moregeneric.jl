@@ -25,7 +25,7 @@ struct TopBottomExchanges
     label::String
 end
 #
-const sixexchages = [
+const six_exchanges = [
     TopBottomExchanges(α_a2, α_ℙ,  true , "a2/ℙ" ),
     TopBottomExchanges(α_a2, α_f2, true , "a2/f2"),
     TopBottomExchanges(α_f2, α_ℙ,  false, "f2/ℙ" ),

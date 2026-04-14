@@ -10,7 +10,7 @@ function build_model_from_fixture_entry(entry)
     fit_results = parsed["fit_results"]
     reaction_system = getproperty(DoubleRegge, Symbol(entry["system"]))
     model = DoubleReggeModel(
-        sixexchages[settings["exchanges"]],
+        six_exchanges[settings["exchanges"]],
         settings["t2"],
         settings["scale_α"],
         reaction_system,

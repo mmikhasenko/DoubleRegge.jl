@@ -32,7 +32,7 @@ fitrangemap = map(x -> inlims(x.x, settings["fitrange"]), data)
 fitdata = Table(data[fitrangemap], amps = amplitudes[fitrangemap])
 
 # fit
-const exchanges = sixexchages[settings["exchanges"]]
+const exchanges = six_exchanges[settings["exchanges"]]
 const model = DoubleReggeModel(
     exchanges,
     settings["t2"],

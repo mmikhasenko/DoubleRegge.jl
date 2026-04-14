@@ -116,7 +116,7 @@ const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # build model
 const model = DoubleReggeModel(
-    sixexchages[settings["exchanges"]],
+    six_exchanges[settings["exchanges"]],
     settings["t2"],
     settings["scale_α"],
     reaction_system,

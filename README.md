@@ -13,7 +13,7 @@ The package now exposes a first-class `DoubleReggeModel` object instead of a clo
 ```julia
 using DoubleRegge
 
-exchanges = sixexchages[[1, 2, 3]]
+exchanges = six_exchanges[[1, 2, 3]]
 reaction_system = compass_ηπ
 pars = [1.0, 0.5, -0.25]
 

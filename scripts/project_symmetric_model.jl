@@ -25,7 +25,7 @@ const pfr = [0.5, -0.5]
 const reaction_system = compass_ηπ
 
 # fit
-const exchanges = sixexchages[[1, 3]]
+const exchanges = six_exchanges[[1, 3]]
 const model = DoubleReggeModel(exchanges, -0.2, 0.8, reaction_system, pfr)
 fixed_model(m, cosθ, ϕ; pars = pfr) = amplitude(with_parameters(model, pars), m, cosθ, ϕ)
 fixed_model_sqrtq(m, cosθ, ϕ; pars = pfr) = fixed_model(m, cosθ, ϕ; pars = pars) * sqrt(q(m, reaction_system))

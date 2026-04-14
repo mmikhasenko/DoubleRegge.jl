@@ -32,7 +32,7 @@ constrained_pw_projection_fixed_model(m, init_pars) =
     constrained_pw_projection((cosθ,ϕ)->intensity(m,cosθ,ϕ), init_pars, reaction_system.LMs)
 
 # fit
-const exchanges = sixexchages[settings["exchanges"]]
+const exchanges = six_exchanges[settings["exchanges"]]
 const model = DoubleReggeModel(
     exchanges,
     settings["t2"],

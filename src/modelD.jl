@@ -86,7 +86,7 @@ function amplitude(model::DoubleReggeModel, m, cosθ, ϕ)
     return mysum(typeof(1im * model.pars[1]), generator)
 end
 
-const sixexchages =
+const six_exchanges =
     ReggeExchange[
         ReggeExchange(α_a2, α_ℙ,  true,  "a2/ℙ"),
         ReggeExchange(α_a2, α_f2, true,  "a2/f2"),

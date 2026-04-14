@@ -59,7 +59,7 @@ export trajectory
 export ReggeExchange
 export DoubleReggeModel
 export with_parameters
-export sixexchages
+export six_exchanges
 include("modelD.jl")
 
 export bootstrap_band, slice

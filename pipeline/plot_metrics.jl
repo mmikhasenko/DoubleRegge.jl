@@ -35,7 +35,7 @@ const output_tag = get(settings, "tag", splitext(basename(settings_file))[1])
 const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
 # fit
-const exchanges = sixexchages[settings["exchanges"]]
+const exchanges = six_exchanges[settings["exchanges"]]
 const model = DoubleReggeModel(
     exchanges,
     settings["t2"],

@@ -12,7 +12,7 @@ function model_fixture(tag, reaction_system, points)
     settings = parsed["settings"]
     fit_results = parsed["fit_results"]
     model = DoubleReggeModel(
-        sixexchages[settings["exchanges"]],
+        six_exchanges[settings["exchanges"]],
         settings["t2"],
         settings["scale_α"],
         reaction_system,
