@@ -5,10 +5,12 @@ using JSON
 using TOML
 using DoubleRegge
 
-const OUTPUT_FILE = joinpath(@__DIR__, "..", "test", "fixtures", "default_model_crosscheck.json")
+const OUTPUT_FILE =
+    joinpath(@__DIR__, "..", "test", "fixtures", "default_model_crosscheck.json")
 
 function model_fixture(tag, reaction_system, points)
-    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", tag, "fit-results.toml"))
+    parsed =
+        TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", tag, "fit-results.toml"))
     settings = parsed["settings"]
     fit_results = parsed["fit_results"]
     model = DoubleReggeModel(
@@ -17,7 +19,7 @@ function model_fixture(tag, reaction_system, points)
         settings["scale_α"],
         reaction_system,
         fit_results["fit_minimizer"];
-        s2shift=get(settings, "s2_shift", 0.0),
+        s2shift = get(settings, "s2_shift", 0.0),
     )
     Dict(
         "tag" => tag,
@@ -29,17 +31,16 @@ function model_fixture(tag, reaction_system, points)
                 "m" => point[:m],
                 "cos_theta" => point[:cosθ],
                 "phi" => point[:ϕ],
-                "amplitude_re" => real(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
-                "amplitude_im" => imag(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
+                "amplitude_re" =>
+                    real(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
+                "amplitude_im" =>
+                    imag(amplitude(model, point[:m], point[:cosθ], point[:ϕ])),
             ) for point in points
         ],
     )
 end
 
-points = [
-    (m=2.45, cosθ=0.2, ϕ=0.3),
-    (m=2.75, cosθ=-0.55, ϕ=-1.1),
-]
+points = [(m = 2.45, cosθ = 0.2, ϕ = 0.3), (m = 2.75, cosθ = -0.55, ϕ = -1.1)]
 
 fixture = Dict(
     "schema_version" => 1.0,

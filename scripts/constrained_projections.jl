@@ -45,7 +45,9 @@ parsed = TOML.parsefile(settings_file)
 @unpack settings, fit_results = parsed
 
 const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
-xlab = settings["system"] == "compass_ηπ" ? L"m_{\eta\pi}\,\,(\mathrm{GeV})" : L"m_{\eta'\pi}\,\,(\mathrm{GeV})"
+xlab =
+    settings["system"] == "compass_ηπ" ? L"m_{\eta\pi}\,\,(\mathrm{GeV})" :
+    L"m_{\eta'\pi}\,\,(\mathrm{GeV})"
 
 
 # build model
@@ -78,8 +80,10 @@ function pw_project_fixed_model(m)
     pws = [pw_project(amplitude, L, M) for (L, M) in used_LMs]
     return pws
 end
-constrained_pw_projection_fixed_model(m, init_pars) = (@show m;
-constrained_pw_projection((cosθ, ϕ) -> intensity(m, cosθ, ϕ), init_pars, used_LMs))
+constrained_pw_projection_fixed_model(m, init_pars) = (
+    @show m;
+    constrained_pw_projection((cosθ, ϕ) -> intensity(m, cosθ, ϕ), init_pars, used_LMs)
+)
 
 # forward
 function pull_through_forward(mpoints)
@@ -112,20 +116,28 @@ pull_mpoints = morefrequentrange(plotdata.x, 5)
 pw_projections = pw_project_fixed_model.(pull_mpoints)
 writedlm(fitsfolder(tag, "PWs.txt"), hcat(unfold.(pw_projections)...))
 
-@time mass_cPWs_starting_from_pw =
-    [constrained_pw_projection_fixed_model(x, a) for (x, a) in zip(pull_mpoints, pw_projections)]
-writedlm(fitsfolder(tag, "cPWs.txt"),
-    hcat(unfold.(getproperty.(mass_cPWs_starting_from_pw, :pars))...))
+@time mass_cPWs_starting_from_pw = [
+    constrained_pw_projection_fixed_model(x, a) for
+    (x, a) in zip(pull_mpoints, pw_projections)
+]
+writedlm(
+    fitsfolder(tag, "cPWs.txt"),
+    hcat(unfold.(getproperty.(mass_cPWs_starting_from_pw, :pars))...),
+)
 #
 
 # ambibuities
 @time cpw_forward = pull_through_forward(pull_mpoints)
-writedlm(fitsfolder(tag, "cPWs_forward.txt"),
-    hcat(unfold.(getproperty.(cpw_forward, :pars))...))
+writedlm(
+    fitsfolder(tag, "cPWs_forward.txt"),
+    hcat(unfold.(getproperty.(cpw_forward, :pars))...),
+)
 # 
 @time cpw_backward = pull_through_backward(pull_mpoints)
-writedlm(fitsfolder(tag, "cPWs_backward.txt"),
-    hcat(unfold.(getproperty.(cpw_backward, :pars))...))
+writedlm(
+    fitsfolder(tag, "cPWs_backward.txt"),
+    hcat(unfold.(getproperty.(cpw_backward, :pars))...),
+)
 
 
 #                            _|        _|                      _|    _|      _|                      
@@ -138,7 +150,7 @@ writedlm(fitsfolder(tag, "cPWs_backward.txt"),
 
 function read_PW_matrices(filename, LMs)
     matrix = readdlm(filename)
-    amplitudevectors = [fold(matrix[:, i]) for i in 1:size(matrix, 2)]
+    amplitudevectors = [fold(matrix[:, i]) for i = 1:size(matrix, 2)]
     return TwoBodyPartialWaves.(Ref(LMs), amplitudevectors)
 end
 
@@ -151,16 +163,22 @@ mass_cPWs_b = read_PW_matrices(fitsfolder(tag, "cPWs_backward.txt"), used_LMs)
 function ambiguousPWs(PWs::TwoBodyPartialWaveAs)
     L1_indices = used_LMs .. 2 .== 1
     ba = bartlettambiguities(PWs.PWs[L1_indices])
-    return [TwoBodyPartialWaves(Vector(PWs.LMs),
-        [L1_indices[i] ? a[sum(L1_indices[1:i])] : PWs.PWs[i] for i in 1:length(used_LMs)])
-            for a in ba]
+    return [
+        TwoBodyPartialWaves(
+            Vector(PWs.LMs),
+            [
+                L1_indices[i] ? a[sum(L1_indices[1:i])] : PWs.PWs[i] for
+                i = 1:length(used_LMs)
+            ],
+        ) for a in ba
+    ]
 end
 
 function ambiguity_tracking(init_index, sets)
     N = length(sets)
     indices = [init_index]
-    intensities = [reorder([s .. :PWs for k in 1:length(used_LMs)]) for s in sets]
-    for i in 2:N
+    intensities = [reorder([s .. :PWs for k = 1:length(used_LMs)]) for s in sets]
+    for i = 2:N
         Ii = intensities[i-1][indices[end]]
         set_i = intensities[i]
         v, ind = findmin(map(x -> norm(x .- Ii), set_i))
@@ -170,7 +188,7 @@ function ambiguity_tracking(init_index, sets)
 end
 # 
 pre_PWs = ambiguousPWs.(mass_cPWs_f)
-mass_cPWs_all = [ambiguity_tracking(k, pre_PWs) for k in 1:length(pre_PWs[1])]
+mass_cPWs_all = [ambiguity_tracking(k, pre_PWs) for k = 1:length(pre_PWs[1])]
 
 
 #                                _|                      _|            
@@ -188,14 +206,16 @@ function ellh(intensity_cosθϕ, PWs, LMs)
         Im ≈ 0.0 && (Im = nextfloat(0.0))
         return -Id * log(Im)
     end
-    f(pars) = sum(abs2, pars) + integrate_dcosθdϕ((cosθ, ϕ) -> integrand(cosθ, ϕ, fold(pars)))[1]
+    f(pars) =
+        sum(abs2, pars) + integrate_dcosθdϕ((cosθ, ϕ) -> integrand(cosθ, ϕ, fold(pars)))[1]
     return f(unfold(PWs))
 end
 
 function full_llh(xv, mass_PWs)
-    return sum(ellh(
-        (cosθ, ϕ) -> intensity(x, cosθ, ϕ),
-        y.PWs, y.LMs) for (x, y) in zip(xv, mass_PWs))
+    return sum(
+        ellh((cosθ, ϕ) -> intensity(x, cosθ, ϕ), y.PWs, y.LMs) for
+        (x, y) in zip(xv, mass_PWs)
+    )
 end
 
 @time llh_ambiguities = full_llh.(Ref(pull_mpoints), mass_cPWs_all)
@@ -216,10 +236,12 @@ function chi2(Imodel, Idata, i)
     χ2 += sum(((ϕ_d .. :val) .- ϕ_m) .^ 2 ./ (ϕ_d .. :err) .^ 2)
     return χ2
 end
-full_chi2(Imodel, Idata) = sum(chi2(Imodel, Idata, i) for i in 1:length(used_LMs))
+full_chi2(Imodel, Idata) = sum(chi2(Imodel, Idata, i) for i = 1:length(used_LMs))
 
-@time chi2_all = [full_chi2(changerepresentation.(expansion[1:5:end]; iref = 2), plotdata.Iϕ)
-                  for expansion in mass_cPWs_all]
+@time chi2_all = [
+    full_chi2(changerepresentation.(expansion[1:5:end]; iref = 2), plotdata.Iϕ) for
+    expansion in mass_cPWs_all
+]
 #
 histogram(chi2_all, bins = 100)
 _, best_ambiguity_i = findmin(chi2_all)
@@ -237,25 +259,55 @@ _, best_ambiguity_i = findmin(chi2_all)
 let
     N = 3
     M = div(length(used_LMs) - 1, 3) + 1
-    plot(layout = grid(M, N), size = (300 * N, 300 * M), frame = :box, grid = false, ylim = (0, :auto),
-        xlab = xlab, ylab = L"\mathrm{Intensity}\,/\,40\,\mathrm{MeV}")
+    plot(
+        layout = grid(M, N),
+        size = (300 * N, 300 * M),
+        frame = :box,
+        grid = false,
+        ylim = (0, :auto),
+        xlab = xlab,
+        ylab = L"\mathrm{Intensity}\,/\,40\,\mathrm{MeV}",
+    )
     # 
-    for i in 1:M*N
+    for i = 1:(M*N)
         if i > length(used_LMs)
             plot!(sp = i, axis = false, ticks = false, xlab = "", ylab = "")
             continue
         end
         # 
         # plot!.(sp=i, Ref(pull_mpoints), mass_cPWs_all, :I, i, lab="", l=(1, :gray, 0.3))
-        plot!(sp = i, pull_mpoints, mass_cPWs_all[best_ambiguity_i], :I, i, lab = i != 1 ? "" : "cPW projection", l = (2, :blue))
+        plot!(
+            sp = i,
+            pull_mpoints,
+            mass_cPWs_all[best_ambiguity_i],
+            :I,
+            i,
+            lab = i != 1 ? "" : "cPW projection",
+            l = (2, :blue),
+        )
         #     #
-        plot!(sp = i, pull_mpoints, mass_PWs, :I, i, lab = i != 1 ? "" : "PW projection", l = (2, :red, :dash))
+        plot!(
+            sp = i,
+            pull_mpoints,
+            mass_PWs,
+            :I,
+            i,
+            lab = i != 1 ? "" : "PW projection",
+            l = (2, :red, :dash),
+        )
         #     # plot!(sp=i, pull_mpoints, mass_cPWs_f, :I, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
         #     # 
-        scatter!(sp = i, plotdata.x, plotdata.Iϕ, :I, i,
+        scatter!(
+            sp = i,
+            plotdata.x,
+            plotdata.Iϕ,
+            :I,
+            i,
             xerr = (plotdata.x[2] - plotdata.x[1]) / 2,
-            c = :black, ms = 3,
-            lab = i != 1 ? "" : "data")
+            c = :black,
+            ms = 3,
+            lab = i != 1 ? "" : "data",
+        )
     end
     plot!()
 end
@@ -264,52 +316,95 @@ savefig(plotsfolder(tag, "intensities_with_bartlett.pdf"))
 let
     N = 3
     M = div(length(used_LMs) - 1, 3) + 1
-    plot(layout = grid(M, N), size = (300 * N, 300 * M), frame = :box, grid = false,
-        xlab = xlab, ylab = L"\mathrm{Phase}\,\,(\mathrm{deg})")
+    plot(
+        layout = grid(M, N),
+        size = (300 * N, 300 * M),
+        frame = :box,
+        grid = false,
+        xlab = xlab,
+        ylab = L"\mathrm{Phase}\,\,(\mathrm{deg})",
+    )
     # 
-    for i in 1:M*N
+    for i = 1:(M*N)
         if i == 2 || i > length(used_LMs)
             plot!(sp = i, axis = false, ticks = false, xlab = "", ylab = "")
             continue
         end
         # 
         # plot!.(sp=i, Ref(pull_mpoints), mass_cPWs_all, :ϕ, i, lab="", l=(1, :gray, 0.3))
-        plot!(sp = i, pull_mpoints, mass_cPWs_all[best_ambiguity_i], :ϕ, i, lab = i != 1 ? "" : "cPW projection", l = (2, :blue))
+        plot!(
+            sp = i,
+            pull_mpoints,
+            mass_cPWs_all[best_ambiguity_i],
+            :ϕ,
+            i,
+            lab = i != 1 ? "" : "cPW projection",
+            l = (2, :blue),
+        )
         #
-        plot!(sp = i, pull_mpoints, mass_PWs, :ϕ, i, lab = i != 1 ? "" : "PW projection", l = (2, :red, :dash))
+        plot!(
+            sp = i,
+            pull_mpoints,
+            mass_PWs,
+            :ϕ,
+            i,
+            lab = i != 1 ? "" : "PW projection",
+            l = (2, :red, :dash),
+        )
         # plot!(sp=i, pull_mpoints, mass_cPWs, :ϕ, i, lab=i!=1 ? "" : "cPW projection", l=(2,:red))
         #
-        scatter!(sp = i, plotdata.x, plotdata.Iϕ, :ϕ, i,
+        scatter!(
+            sp = i,
+            plotdata.x,
+            plotdata.Iϕ,
+            :ϕ,
+            i,
             xerr = (plotdata.x[2] - plotdata.x[1]) / 2,
-            c = :black, ms = 3,
-            lab = i != 1 ? "" : "data")
+            c = :black,
+            ms = 3,
+            lab = i != 1 ? "" : "data",
+        )
         #
     end
     plot!()
 end
 savefig(plotsfolder(tag, "phases_with_bartlett.pdf"))
 
-wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}) =
-    hcat([func(PWs, i) for i in 1:length(used_LMs)]...)
+wavesbinsmatrix(func, PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) =
+    hcat([func(PWs, i) for i = 1:length(used_LMs)]...)
 #
 
-writedlm(fitsfolder(tag, "data_ajusted.txt"),
-    hcat(plotdata.x,
+writedlm(
+    fitsfolder(tag, "data_ajusted.txt"),
+    hcat(
+        plotdata.x,
         wavesbinsmatrix(intensity, plotdata.Iϕ) .. :val,
         wavesbinsmatrix(intensity, plotdata.Iϕ) .. :err,
         wavesbinsmatrix(phase, plotdata.Iϕ) .. :val,
-        wavesbinsmatrix(phase, plotdata.Iϕ) .. :err))
+        wavesbinsmatrix(phase, plotdata.Iϕ) .. :err,
+    ),
+)
 #
-writedlm(fitsfolder(tag, "pw_ajusted.txt"),
-    hcat(pull_mpoints,
+writedlm(
+    fitsfolder(tag, "pw_ajusted.txt"),
+    hcat(
+        pull_mpoints,
         wavesbinsmatrix(intensity, changerepresentation.(mass_PWs; iref = 2)),
-        wavesbinsmatrix(intensity, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref = 2)),
+        wavesbinsmatrix(
+            intensity,
+            changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref = 2),
+        ),
         wavesbinsmatrix(phase, changerepresentation.(mass_PWs; iref = 2)),
-        wavesbinsmatrix(phase, changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref = 2))))
+        wavesbinsmatrix(
+            phase,
+            changerepresentation.(mass_cPWs_all[best_ambiguity_i]; iref = 2),
+        ),
+    ),
+)
 
 
-sumintensityoverbins(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N, V}} where {N, V}) =
-    sum(sum, intensity(mass_PWs, i) for i in 1:length(used_LMs))
+sumintensityoverbins(mass_PWs::Vector{TwoBodyPartialWaveIϕs{N,V}} where {N,V}) =
+    sum(sum, intensity(mass_PWs, i) for i = 1:length(used_LMs))
 
 Itot_PWs = sumintensityoverbins(changerepresentation.(mass_PWs[1:5:end]; iref = 2))
 Itot_cPWs = sumintensityoverbins(changerepresentation.(mass_cPWs[1:5:end]; iref = 2))
@@ -318,13 +413,18 @@ Itot_data = sumintensityoverbins(plotdata.Iϕ)
 to_toml(v::Measurement) = [v.val, v.err]
 # 
 open(fitsfolder(tag, "constrained.toml"), "w") do io
-    TOML.print(to_toml, io, Dict(
-        "settings" => settings,
-        "fit_results" => fit_results,
-        "constrained_fits" => Dict(
-            "Itot_PWs" => Itot_PWs,
-            "Itot_cPWs" => Itot_cPWs,
-            "Itot_data" => to_toml(Itot_data),
-            "pw_fraction" => Itot_PWs / Itot_cPWs),
-    ))
+    TOML.print(
+        to_toml,
+        io,
+        Dict(
+            "settings" => settings,
+            "fit_results" => fit_results,
+            "constrained_fits" => Dict(
+                "Itot_PWs" => Itot_PWs,
+                "Itot_cPWs" => Itot_cPWs,
+                "Itot_data" => to_toml(Itot_data),
+                "pw_fraction" => Itot_PWs / Itot_cPWs,
+            ),
+        ),
+    )
 end

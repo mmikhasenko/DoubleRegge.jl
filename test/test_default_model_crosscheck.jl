@@ -39,7 +39,9 @@ end
                 ϕ = point["phi"],
                 t2 = model.t2,
             )
-            @test isfinite(abs2(modelDR(α_a2, α_ℙ, vars, reaction_system; η_forward = true)))
+            @test isfinite(
+                abs2(modelDR(α_a2, α_ℙ, vars, reaction_system; η_forward = true)),
+            )
         end
     end
 end

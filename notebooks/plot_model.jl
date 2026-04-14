@@ -7,25 +7,31 @@ using InteractiveUtils
 # ╔═╡ 64d5bf96-d096-4864-9fbd-67df6d7aeb5e
 # ╠═╡ show_logs = false
 begin
-	using Pkg
-	cd(joinpath(@__DIR__, ".."))
-	Pkg.activate(".")
-	# 
-	using TOML
-	# 
-	using Plots
-	import Plots.PlotMeasures.mm
-	using LaTeXStrings
-	# 
-	using DoubleRegge
-	using Parameters
+    using Pkg
+    cd(joinpath(@__DIR__, ".."))
+    Pkg.activate(".")
+    # 
+    using TOML
+    # 
+    using Plots
+    import Plots.PlotMeasures.mm
+    using LaTeXStrings
+    # 
+    using DoubleRegge
+    using Parameters
 end
 
 # ╔═╡ d9173b8c-2863-4726-820f-01970bba84f0
-theme(:wong2;
-	size = (500, 350), xlab = L"m_{\eta'\pi}\,\,(\mathrm{GeV})",
-	frame=:box, grid=false, lab="",
-	xlims=(:auto, :auto), ylims=(:auto, :auto))
+theme(
+    :wong2;
+    size = (500, 350),
+    xlab = L"m_{\eta'\pi}\,\,(\mathrm{GeV})",
+    frame = :box,
+    grid = false,
+    lab = "",
+    xlims = (:auto, :auto),
+    ylims = (:auto, :auto),
+)
 
 # ╔═╡ a93d70c8-50bb-4836-8a13-5d69b824945c
 md"""
@@ -34,10 +40,10 @@ md"""
 
 # ╔═╡ 42ede67c-de09-4edc-b05f-c8bdc6205b74
 @unpack settings, fit_results = let
-	tag = "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
-	settings_file = fitsfolder(tag, "fit-results.toml")
-	!isfile(settings_file) && error("no file")
-	TOML.parsefile(settings_file)
+    tag = "etappi_a2Po-a2f2-f2f2-PoPo_opposite-sign"
+    settings_file = fitsfolder(tag, "fit-results.toml")
+    !isfile(settings_file) && error("no file")
+    TOML.parsefile(settings_file)
 end
 
 # ╔═╡ f0a7b1b4-b971-11ef-0c7f-3b497c108dc6
@@ -50,10 +56,11 @@ const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 const model = DoubleReggeModel(
     six_exchanges[settings["exchanges"]],
     settings["t2"],
-	settings["scale_α"],
+    settings["scale_α"],
     reaction_system,
     fit_results["fit_minimizer"];
-    s2shift = get(settings, "s2_shift", 0.0));
+    s2shift = get(settings, "s2_shift", 0.0),
+);
 
 # ╔═╡ 6ad94d49-2e9f-43a6-ae50-c3f06809310b
 fixed_model(m, cosθ, ϕ) = amplitude(model, m, cosθ, ϕ)

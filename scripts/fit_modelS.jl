@@ -16,9 +16,14 @@ using DelimitedFiles
 # 
 
 using Plots
-theme(:wong2;
-    frame = :box, grid = false, lab = "",
-    xlims = (:auto, :auto), ylims = (:auto, :auto))
+theme(
+    :wong2;
+    frame = :box,
+    grid = false,
+    lab = "",
+    xlims = (:auto, :auto),
+    ylims = (:auto, :auto),
+)
 
 
 # 
@@ -67,21 +72,24 @@ integrand′(cosθ, ϕ, pars) = ForwardDiff.gradient(p -> integrand(cosθ, ϕ, p
 ellh′(pars) = integrate_dcosθdϕ((cosθ, ϕ) -> integrand′(cosθ, ϕ, pars), dims = length(pars))
 
 # fit
-ft = Optim.optimize(ellh, settings["initial_pars"], BFGS(),
-    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15))
+ft = Optim.optimize(
+    ellh,
+    settings["initial_pars"],
+    BFGS(),
+    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15),
+)
 #
 
 # save results
 fit_results = Dict(
     "fit_converged" => ft.x_converged,
     "fit_minimizer" => ft.minimizer,
-    "fit_minimum" => ft.minimum)
+    "fit_minimum" => ft.minimum,
+)
 
 output_name = fitsfolder(tag, "fit-results.toml");
 
 open(output_name, "w") do io
-    TOML.print(io, Dict(
-        "settings" => settings,
-        "fit_results" => fit_results))
+    TOML.print(io, Dict("settings" => settings, "fit_results" => fit_results))
 end
 

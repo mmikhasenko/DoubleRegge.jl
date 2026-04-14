@@ -6,9 +6,14 @@ using QuadGK
 using Statistics
 # 
 using Plots
-theme(:wong2;
-    frame = :box, grid = false, lab = "",
-    xlims = (:auto, :auto), ylims = (:auto, :auto))
+theme(
+    :wong2;
+    frame = :box,
+    grid = false,
+    lab = "",
+    xlims = (:auto, :auto),
+    ylims = (:auto, :auto),
+)
 ##
 const data_folder = "data/exp_raw/PLB_shifted"
 const reaction_system = compass_ηπ
@@ -26,13 +31,18 @@ phi_asymmetry_data(bin, cosθ; start = -π / 2) =
 #
 let
     plot()
-    for bin in 40:3:55
-        plot!(cosθ -> phi_asymmetry_data(bin, cosθ), -1:0.01:1, lab = "m(ηπ)=$(round(data.x[bin], digits=2))")
+    for bin = 40:3:55
+        plot!(
+            cosθ -> phi_asymmetry_data(bin, cosθ),
+            -1:0.01:1,
+            lab = "m(ηπ)=$(round(data.x[bin], digits=2))",
+        )
     end
     plot!(xlab = "cosθ", ylab = "Assymetry in position of ϕ peak")
 end
 
-phi_asymmetry_2d_data(bin) = phi_asymmetry_2d((cosθ, ϕ) -> abs2(recamp(cosθ, ϕ, data.amps[bin])))
+phi_asymmetry_2d_data(bin) =
+    phi_asymmetry_2d((cosθ, ϕ) -> abs2(recamp(cosθ, ϕ, data.amps[bin])))
 @assert phi_asymmetry_2d_data(52) isa Float64
 
 let

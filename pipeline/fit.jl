@@ -41,7 +41,8 @@ const model = DoubleReggeModel(
     settings["initial_pars"];
     s2shift = get(settings, "s2_shift", 0.0),
 )
-intensity(m, cosθ, ϕ; pars) = abs2(amplitude(with_parameters(model, pars), m, cosθ, ϕ)) * q(m, reaction_system)
+intensity(m, cosθ, ϕ; pars) =
+    abs2(amplitude(with_parameters(model, pars), m, cosθ, ϕ)) * q(m, reaction_system)
 
 function integrand(cosθ, ϕ, pars)
     trial_model = with_parameters(model, pars)
@@ -57,18 +58,22 @@ integrand′(cosθ, ϕ, pars) = ForwardDiff.gradient(p -> integrand(cosθ, ϕ, p
 ellh′(pars) = integrate_dcosθdϕ((cosθ, ϕ) -> integrand′(cosθ, ϕ, pars), dims = length(pars))
 ellh′!(stor, pars) = (stor .= ellh′(pars))
 
-ft = Optim.optimize(ellh, ellh′!, settings["initial_pars"], BFGS(),
-    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15))
+ft = Optim.optimize(
+    ellh,
+    ellh′!,
+    settings["initial_pars"],
+    BFGS(),
+    Optim.Options(show_trace = true, g_tol = 1e-4, iterations = 15),
+)
 #
 fit_results = Dict(
     "fit_converged" => ft.x_converged,
     "fit_minimizer" => ft.minimizer,
-    "fit_minimum" => ft.minimum)
+    "fit_minimum" => ft.minimum,
+)
 
 output_name = joinpath("fit-results.toml");
 
 open(output_name, "w") do io
-    TOML.print(io, Dict(
-        "settings" => settings,
-        "fit_results" => fit_results))
+    TOML.print(io, Dict("settings" => settings, "fit_results" => fit_results))
 end
