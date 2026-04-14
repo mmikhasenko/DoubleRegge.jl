@@ -6,6 +6,38 @@ https://inspirehep.net/literature/1859521
 
 This repository contains Julia code for modeling and fitting `π p → η(′) π p` in the double-Regge region, together with analysis scripts for fits, projections, asymmetries, toy studies, and plotting.
 
+## Creating a model
+
+The package now exposes a first-class `DoubleReggeModel` object instead of a closure-producing `build_model` helper.
+
+```julia
+using DoubleRegge
+
+exchanges = sixexchages[[1, 2, 3]]
+reaction_system = compass_ηπ
+pars = [1.0, 0.5, -0.25]
+
+model = DoubleReggeModel(
+    exchanges,
+    -0.2,
+    0.8,
+    reaction_system,
+    pars;
+    s2shift = 0.0,
+)
+
+amp = amplitude(model, 2.3, 0.1, 0.5)
+```
+
+To evaluate the same model with a different parameter vector, create a rebound copy:
+
+```julia
+trial_model = with_parameters(model, [1.1, 0.4, -0.3])
+trial_amp = amplitude(trial_model, 2.3, 0.1, 0.5)
+```
+
+The model object exposes its configuration directly through fields such as `model.exchanges`, `model.t2`, `model.scalar_α`, `model.reaction_system`, `model.pars`, and `model.s2shift`.
+
 ## Scripts
 
 Cost guide:
