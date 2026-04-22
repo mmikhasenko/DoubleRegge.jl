@@ -58,9 +58,13 @@ mass_threshold(system) = let ch = system.channel
     ch.m1 + ch.m2
 end
 
-const m_min = parse(Float64, get(ENV, "DR_M_MIN", string(mass_threshold(reaction_system) + 0.01)))
-const m_max = parse(Float64, get(ENV, "DR_M_MAX", "3.0"))
-const m_points = parse(Int, get(ENV, "DR_M_POINTS", "81"))
+const default_m_min = Float64(get(settings, "m_min", mass_threshold(reaction_system) + 0.01))
+const default_m_max = Float64(get(settings, "m_max", 3.0))
+const default_m_points = Int(get(settings, "m_points", 81))
+
+const m_min = parse(Float64, get(ENV, "DR_M_MIN", string(default_m_min)))
+const m_max = parse(Float64, get(ENV, "DR_M_MAX", string(default_m_max)))
+const m_points = parse(Int, get(ENV, "DR_M_POINTS", string(default_m_points)))
 
 m_min < m_max || error("Need DR_M_MIN < DR_M_MAX, got $m_min >= $m_max")
 m_points >= 2 || error("Need at least 2 mass points, got $m_points")
