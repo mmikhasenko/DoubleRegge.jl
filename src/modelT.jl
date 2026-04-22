@@ -20,13 +20,53 @@ TReggeExchange(α_top, α_bot, η_forward::Bool, label::AbstractString) = TRegge
     label,
 )
 
-struct TKinematics
+# ─── Kinematics ──────────────────────────────────────────────────────────────
+#
+# Two orthogonal representations of a production-decay event are used:
+#
+#   KinematicsGJ – Gottfried-Jackson angles:  (s, s1, cosθ, ϕ, t2)
+#                  the "model-side" input, parametrising the phase space.
+#
+#   KinematicsM  – Mandelstam invariants + K: (s, s1, s13, s23, t1, tπ, t2, K)
+#                  the minimal set the amplitude actually needs.
+#
+# KinematicsM can be built from KinematicsGJ (needs a reaction_system), or
+# directly from externally provided invariants (e.g. MC events on disk).
+
+struct KinematicsGJ
     s::Float64
     s1::Float64
-    s2::Float64
-    t::Float64
+    cosθ::Float64
+    ϕ::Float64
     t2::Float64
 end
+
+struct KinematicsM
+    s::Float64
+    s1::Float64    # s12 in 3-body labeling: (η π) invariant mass squared
+    s13::Float64   # sηp
+    s23::Float64   # sπp
+    t1::Float64    # momentum transfer to η
+    tπ::Float64    # momentum transfer to π
+    t2::Float64    # momentum transfer to recoil proton
+    K::Float64     # kinematic K-factor (carries the sin ϕ dependence)
+end
+
+function KinematicsM(gj::KinematicsGJ, reaction_system)
+    vars = (s=gj.s, s1=gj.s1, cosθ=gj.cosθ, ϕ=gj.ϕ, t2=gj.t2)
+    return KinematicsM(
+        gj.s,
+        gj.s1,
+        sηp(vars, reaction_system),
+        sπp(vars, reaction_system),
+        t1(vars, reaction_system),
+        tπ(vars, reaction_system),
+        gj.t2,
+        Kfactor(vars, reaction_system),
+    )
+end
+
+# ─── Model ───────────────────────────────────────────────────────────────────
 
 struct TDoubleReggeModel{E<:AbstractVector,P,R}
     exchanges::E
@@ -63,84 +103,71 @@ with_parameters(model::TDoubleReggeModel, pars) = TDoubleReggeModel(
     pars,
 )
 
-_model_vars(model::TDoubleReggeModel, m, cosθ, ϕ) =
-    (s = model.reaction_system.s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = model.t2)
+# ─── Amplitude ───────────────────────────────────────────────────────────────
 
-function _modelTR_core(
-    top::TVertex,
-    bot::TVertex,
-    kin::TKinematics,
-    K;
-    α′::Float64,
-)
-    α1 = top.α(kin.t)
+"""
+    modelDR(exchange::TReggeExchange, kin::KinematicsM; α′)
+
+Core single-diagram amplitude. Works purely on Mandelstam + K: no reaction
+system is needed here. The choice of `(t, s2)` inside a diagram is driven by
+`exchange.η_forward`.
+"""
+function modelDR(exchange::TReggeExchange, kin::KinematicsM; α′::Float64=0.9)
+    top, bot = exchange.top, exchange.bot
+    t = exchange.η_forward ? kin.t1 : kin.tπ
+    s2 = exchange.η_forward ? kin.s23 : kin.s13
+
+    α1 = top.α(t)
     α2 = bot.α(kin.t2)
+
     prefactor =
-        -K * sf_gamma(1 - α1) * sf_gamma(1 - α2) * (α′ * kin.s1)^α1 *
-        (α′ * kin.s2)^α2 / (α′ * kin.s)
-    ff = form_factor(top, kin.t) * form_factor(bot, kin.t2)
-    η = kin.s / (α′ * kin.s1 * kin.s2)
+        -kin.K * sf_gamma(1 - α1) * sf_gamma(1 - α2) *
+        (α′ * kin.s1)^α1 * (α′ * s2)^α2 / (α′ * kin.s)
+    ff = form_factor(top, t) * form_factor(bot, kin.t2)
+
+    η = kin.s / (α′ * kin.s1 * s2)
     τ1, τ2 = top.τ, bot.τ
-    vertex = 0.0im
     ξ1 = ξ(τ1, α1)
     ξ21 = ξ(τ2, τ1, α2, α1)
-    vertex += η^α1 * ξ1 * ξ21 * V(α1, α2, η)
     ξ2 = ξ(τ2, α2)
     ξ12 = ξ(τ1, τ2, α1, α2)
-    vertex += η^α2 * ξ2 * ξ12 * V(α2, α1, η)
+    vertex = η^α1 * ξ1 * ξ21 * V(α1, α2, η) +
+             η^α2 * ξ2 * ξ12 * V(α2, α1, η)
+
     return ff * prefactor * vertex
 end
 
-function modelDR(
+"""
+    modelDR(exchange, gj::KinematicsGJ, reaction_system; α′)
+
+Convenience wrapper that converts GJ → Mandelstam on the fly.
+"""
+modelDR(
     exchange::TReggeExchange,
-    vars,
+    gj::KinematicsGJ,
     reaction_system;
-    α′::Float64 = 0.9,
-)
-    @unpack s, s1, t2 = vars
-    t = exchange.η_forward ? t1(vars, reaction_system) : tπ(vars, reaction_system)
-    s2 = exchange.η_forward ? sπp(vars, reaction_system) : sηp(vars, reaction_system)
-    K = Kfactor(vars, reaction_system)
-    kin = TKinematics(s, s1, s2, t, t2)
-    return _modelTR_core(exchange.top, exchange.bot, kin, K; α′ = α′)
+    α′::Float64=0.9,
+) = modelDR(exchange, KinematicsM(gj, reaction_system); α′=α′)
+
+# ─── Full amplitude (sum over diagrams) ──────────────────────────────────────
+
+function amplitude(model::TDoubleReggeModel, kin::KinematicsM)
+    generator = (
+        p * modelDR(exchange, kin; α′=model.scalar_α)
+        for (p, exchange) in zip(model.pars, model.exchanges)
+    )
+    return mysum(typeof(1im * model.pars[1]), generator)
 end
+
+amplitude(model::TDoubleReggeModel, gj::KinematicsGJ) =
+    amplitude(model, KinematicsM(gj, model.reaction_system))
 
 function amplitude(model::TDoubleReggeModel, m, cosθ, ϕ)
-    vars = _model_vars(model, m, cosθ, ϕ)
-    generator = (
-        p * modelDR(exchange, vars, model.reaction_system; α′ = model.scalar_α)
-        for (p, exchange) in zip(model.pars, model.exchanges)
-    )
-    return mysum(typeof(1im * model.pars[1]), generator)
+    gj = KinematicsGJ(model.reaction_system.s0, m^2, cosθ, ϕ, model.t2)
+    return amplitude(model, gj)
 end
 
-struct TEventKinematics
-    s::Float64
-    s12::Float64
-    s13::Float64
-    s23::Float64
-    t1::Float64
-    tπ::Float64
-    t2::Float64
-    cosθ::Float64
-    ϕ::Float64
-    K::Float64
-end
-
-function modelDR(exchange::TReggeExchange, ev::TEventKinematics; α′::Float64 = 0.9)
-    t = exchange.η_forward ? ev.t1 : ev.tπ
-    s2 = exchange.η_forward ? ev.s23 : ev.s13
-    kin = TKinematics(ev.s, ev.s12, s2, t, ev.t2)
-    return _modelTR_core(exchange.top, exchange.bot, kin, ev.K; α′ = α′)
-end
-
-function amplitude(model::TDoubleReggeModel, ev::TEventKinematics)
-    generator = (
-        p * modelDR(exchange, ev; α′ = model.scalar_α)
-        for (p, exchange) in zip(model.pars, model.exchanges)
-    )
-    return mysum(typeof(1im * model.pars[1]), generator)
-end
+# ─── TOML loader ─────────────────────────────────────────────────────────────
 
 function _get_tmodel_couplings(parsed, diagrams)
     if haskey(parsed, "couplings")
@@ -155,7 +182,7 @@ function _get_tmodel_couplings(parsed, diagrams)
     throw(ArgumentError("expected either [couplings] or [fit_results].fit_minimizer in modelT config"))
 end
 
-function load_modelT_config(parsed; settings_key::AbstractString = "settings")
+function load_modelT_config(parsed; settings_key::AbstractString="settings")
     settings = parsed[settings_key]
     reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 
@@ -199,15 +226,15 @@ function load_modelT_config(parsed; settings_key::AbstractString = "settings")
     )
 
     return (
-        model = model,
-        settings = settings,
-        reaction_system = reaction_system,
-        trajectories = trajectories,
-        vertices = vertices,
-        diagrams = diagrams,
-        couplings = pars,
+        model=model,
+        settings=settings,
+        reaction_system=reaction_system,
+        trajectories=trajectories,
+        vertices=vertices,
+        diagrams=diagrams,
+        couplings=pars,
     )
 end
 
-load_modelT_from_toml(path::AbstractString; settings_key::AbstractString = "settings") =
-    load_modelT_config(TOML.parsefile(path); settings_key = settings_key)
+load_modelT_from_toml(path::AbstractString; settings_key::AbstractString="settings") =
+    load_modelT_config(TOML.parsefile(path); settings_key=settings_key)

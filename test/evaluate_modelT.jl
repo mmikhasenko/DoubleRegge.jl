@@ -37,26 +37,24 @@ end
     @test exchange.bot.α === α_bot
     @test exchange.η_forward == true
     @test exchange.label == "a2/ℙ"
-    vars = (s = ηπ_system_T.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π / 4, t2 = -0.45)
-    amp = modelDR(exchange, vars, ηπ_system_T; α′ = 0.85)
+    gj = KinematicsGJ(ηπ_system_T.s0, 4.0^2, 0.4, π / 4, -0.45)
+    amp = modelDR(exchange, gj, ηπ_system_T; α′ = 0.85)
     @test isfinite(real(amp))
     @test isfinite(imag(amp))
 end
 
-@testset "modelT TKinematics + _modelTR_core" begin
+@testset "modelT KinematicsM ≡ KinematicsGJ path" begin
     α_top = trajectory(0.917, 0.44)
     α_bot = trajectory(0.25, 1.08)
-    vars = (s = ηπ_system_T.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π / 4, t2 = -0.45)
-    t = DoubleRegge.t1(vars, ηπ_system_T)
-    s2 = DoubleRegge.sπp(vars, ηπ_system_T)
-    K = DoubleRegge.Kfactor(vars, ηπ_system_T)
-    kin = TKinematics(vars.s, vars.s1, s2, t, vars.t2)
+    gj = KinematicsGJ(ηπ_system_T.s0, 4.0^2, 0.4, π / 4, -0.45)
+    kin = KinematicsM(gj, ηπ_system_T)
 
     exchange = TReggeExchange(α_top, α_bot, true, "a2/ℙ")
-    direct = DoubleRegge._modelTR_core(exchange.top, exchange.bot, kin, K; α′ = 0.85)
-    via_vars = modelDR(exchange, vars, ηπ_system_T; α′ = 0.85)
-    @test direct ≈ via_vars
+    direct   = modelDR(exchange, kin;  α′ = 0.85)
+    via_gj   = modelDR(exchange, gj, ηπ_system_T; α′ = 0.85)
+    @test direct ≈ via_gj
 
+    # form factors multiply in at both vertices
     b_top, b_bot = -0.5, 0.3
     ex_ff = TReggeExchange(
         TVertex(α_top, b_top, 1.0),
@@ -64,29 +62,18 @@ end
         true,
         "a2/ℙ-ff",
     )
-    amp_ff = modelDR(ex_ff, vars, ηπ_system_T; α′ = 0.85)
-    @test amp_ff ≈ via_vars * form_factor(ex_ff.top, t) * form_factor(ex_ff.bot, vars.t2)
+    amp_ff = modelDR(ex_ff, kin; α′ = 0.85)
+    @test amp_ff ≈ direct * form_factor(ex_ff.top, kin.t1) * form_factor(ex_ff.bot, kin.t2)
 end
 
-@testset "modelT EventKinematics path" begin
+@testset "modelT KinematicsM direct path" begin
     parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
     config = load_modelT_config(parsed)
-    vars = (s = ηπ_system_T.s0, s1 = 2.32^2, cosθ = cos(π / 3), ϕ = π / 4, t2 = -0.2)
-    ev = TEventKinematics(
-        vars.s,
-        vars.s1,
-        DoubleRegge.sηp(vars, ηπ_system_T),
-        DoubleRegge.sπp(vars, ηπ_system_T),
-        DoubleRegge.t1(vars, ηπ_system_T),
-        DoubleRegge.tπ(vars, ηπ_system_T),
-        vars.t2,
-        vars.cosθ,
-        vars.ϕ,
-        DoubleRegge.Kfactor(vars, ηπ_system_T),
-    )
+    gj = KinematicsGJ(ηπ_system_T.s0, 2.32^2, cos(π / 3), π / 4, -0.2)
+    kin = KinematicsM(gj, ηπ_system_T)
     exchange = config.model.exchanges[3]
-    @test modelDR(exchange, vars, ηπ_system_T; α′ = 0.8) ≈
-          modelDR(exchange, ev; α′ = 0.8)
+    @test modelDR(exchange, gj, ηπ_system_T; α′ = 0.8) ≈
+          modelDR(exchange, kin; α′ = 0.8)
 end
 
 @testset "modelT amplitude runs" begin
@@ -102,6 +89,12 @@ end
     amp = amplitude(model, 2.3, 0.4, π / 5)
     @test isfinite(real(amp))
     @test isfinite(imag(amp))
+
+    # all three amplitude entry points agree
+    gj  = KinematicsGJ(ηπ_system_T.s0, 2.3^2, 0.4, π / 5, model.t2)
+    kin = KinematicsM(gj, ηπ_system_T)
+    @test amplitude(model, gj)  ≈ amp
+    @test amplitude(model, kin) ≈ amp
 end
 
 @testset "modelT config loader" begin

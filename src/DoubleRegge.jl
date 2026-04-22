@@ -63,7 +63,8 @@ export with_parameters
 export six_exchanges
 include("modelD.jl")
 
-export TVertex, TReggeExchange, TKinematics, TEventKinematics, TDoubleReggeModel
+export TVertex, TReggeExchange, TDoubleReggeModel
+export KinematicsGJ, KinematicsM
 export form_factor
 export load_modelT_config, load_modelT_from_toml
 include("modelT.jl")

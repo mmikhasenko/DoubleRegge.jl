@@ -27,8 +27,14 @@ mkpath(joinpath("data", "exp_pro", tag))
 const model = config.model
 
 # ─── Load events from ROOT ───────────────────────────────────────────────────
+#
+# Each event carries two kinematic views:
+#   • KinematicsM  – Mandelstam + K: all the amplitude needs.
+#   • (cosθ, ϕ)    – GJ angles, kept for the Psi partial-wave basis only.
 
-function load_events(path::String, treename::String)
+const Event = @NamedTuple{m::KinematicsM, cosθ::Float64, ϕ::Float64}
+
+function load_events(path::String, treename::String)::Vector{Event}
     f = ROOTFile(path)
     ev = treename * "/Event/"
     rd(b)    = UnROOT.array(f, ev * b)
@@ -44,10 +50,13 @@ function load_events(path::String, treename::String)
     s_v    = rdvar("s")
     K_v    = rdvar("KFactor")
     return [
-        TEventKinematics(
-            s_v[i], s12_v[i], s13_v[i], s23_v[i],
-            t1_v[i], tπ_v[i], t2_v[i],
-            cosθ_v[i], ϕ_v[i], K_v[i],
+        (
+            m = KinematicsM(
+                s_v[i], s12_v[i], s13_v[i], s23_v[i],
+                t1_v[i], tπ_v[i], t2_v[i], K_v[i],
+            ),
+            cosθ = cosθ_v[i],
+            ϕ = ϕ_v[i],
         )
         for i in eachindex(s12_v)
     ]
@@ -59,15 +68,15 @@ const all_events = load_events(pathtoevents, treename)
 
 # ─── Mass binning ────────────────────────────────────────────────────────────
 
-const ms_all = sqrt.(getfield.(all_events, :s12))
+const ms_all = [sqrt(ev.m.s1) for ev in all_events]
 const bin_step = Float64(get(settings, "bin_step", 0.1))
 const bin_edges = collect(range(minimum(ms_all), maximum(ms_all); step = bin_step))
 const bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) ./ 2
 
-function bin_events(events, bin_edges)
-    binned = [TEventKinematics[] for _ in 1:(length(bin_edges)-1)]
+function bin_events(events::Vector{Event}, bin_edges)
+    binned = [Event[] for _ in 1:(length(bin_edges)-1)]
     for ev in events
-        m = sqrt(ev.s12)
+        m = sqrt(ev.m.s1)
         idx = searchsortedlast(bin_edges, m)
         if 1 <= idx < length(bin_edges)
             push!(binned[idx], ev)
@@ -81,9 +90,9 @@ const binned = bin_events(all_events, bin_edges)
 
 # ─── MC partial wave projection ──────────────────────────────────────────────
 
-function pw_project_mc(model, events, LMs)
+function pw_project_mc(model, events::Vector{Event}, LMs)
     isempty(events) && return fill(0.0 + 0.0im, length(LMs))
-    amps = amplitude.(Ref(model), events)
+    amps = [amplitude(model, ev.m) for ev in events]
     return [
         mean(i -> amps[i] * conj(Psi(L, M, events[i].cosθ, events[i].ϕ)), eachindex(events))
         for (L, M) in LMs
