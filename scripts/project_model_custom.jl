@@ -19,6 +19,7 @@ const settings   = parsed["settings"]
 const tag        = settings["tag"]
 const scalar_α   = Float64(settings["scalar_α"])
 const s2shift    = Float64(get(settings, "s2shift", 0.0))
+const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
 const pathtoevents = settings["pathtoevents"]
 const treename   = get(settings, "treename", "ProgramVariables")
 
@@ -32,12 +33,12 @@ trajs = Dict(
 )
 
 verts = Dict(
-    k => Vertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
+    k => TVertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
     for (k, v) in parsed["vertices"]
 )
 
-const exchanges = ReggeExchange[
-    ReggeExchange(
+const exchanges = TReggeExchange[
+    TReggeExchange(
         verts[ex["top"]],
         verts[ex["bot"]],
         Bool(ex["eta_forward"]),
@@ -47,7 +48,7 @@ const exchanges = ReggeExchange[
 ]
 
 const pars = Float64.(parsed["fit_results"]["fit_minimizer"])
-const model = DoubleReggeModel(exchanges, 0.0, scalar_α, compass_ηπ, pars; s2shift = s2shift)
+const model = TDoubleReggeModel(exchanges, 0.0, scalar_α, reaction_system, pars; s2shift = s2shift)
 
 # ─── Load events from ROOT ───────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ function load_events(path::String, treename::String)
     s_v    = rdvar("s")
     K_v    = rdvar("KFactor")
     return [
-        EventKinematics(
+        TEventKinematics(
             s_v[i], s12_v[i], s13_v[i], s23_v[i],
             t1_v[i], tπ_v[i], t2_v[i],
             cosθ_v[i], ϕ_v[i], K_v[i],
@@ -88,10 +89,15 @@ const bin_edges = collect(range(minimum(ms_all), maximum(ms_all); step = bin_ste
 const bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) ./ 2
 
 function bin_events(events, bin_edges)
-    return [
-        filter(ev -> bin_edges[i] ≤ sqrt(ev.s12) < bin_edges[i+1], events)
-        for i in 1:length(bin_edges)-1
-    ]
+    binned = [TEventKinematics[] for _ in 1:(length(bin_edges)-1)]
+    for ev in events
+        m = sqrt(ev.s12)
+        idx = searchsortedlast(bin_edges, m)
+        if 1 <= idx < length(bin_edges)
+            push!(binned[idx], ev)
+        end
+    end
+    return binned
 end
 
 @info "Binning events into $(length(bin_centers)) mass bins …"
@@ -99,16 +105,20 @@ const binned = bin_events(all_events, bin_edges)
 
 # ─── MC partial wave projection ──────────────────────────────────────────────
 
-function pw_project_mc(model, events, L, M)
-    isempty(events) && return 0.0 + 0.0im
-    return mean(ev -> amplitude(model, ev) * conj(Psi(L, M, ev.cosθ, ev.ϕ)), events)
+function pw_project_mc(model, events, LMs)
+    isempty(events) && return fill(0.0 + 0.0im, length(LMs))
+    amps = amplitude.(Ref(model), events)
+    return [
+        mean(i -> amps[i] * conj(Psi(L, M, events[i].cosθ, events[i].ϕ)), eachindex(events))
+        for (L, M) in LMs
+    ]
 end
 
-const LMs = compass_ηπ.LMs  # [(1,1),(2,1),(2,2),(3,1),(4,1),(5,1),(6,1)]
+const LMs = reaction_system.LMs
 
 @info "Computing partial wave projections …"
 const pw_amplitudes = [
-    [pw_project_mc(model, binned[b], L, M) for (L, M) in LMs]
+    pw_project_mc(model, binned[b], LMs)
     for b in eachindex(bin_centers)
 ]
 const pw_intensities = [abs2.(cs) for cs in pw_amplitudes]

@@ -65,6 +65,7 @@ Cost guide:
 
 - [phi_asymmetry_data.jl](scripts/phi_asymmetry_data.jl): `Light`. Computes and plots `ϕ`-asymmetry observables directly from the reconstructed data amplitudes.
 - [phi_asymmetry_model.jl](scripts/phi_asymmetry_model.jl): `Light`. Computes and plots `ϕ`-asymmetry observables for individual exchange contributions in a fixed `ηπ` model setup.
+- [plot_modelT_fb_asymmetry.jl](scripts/plot_modelT_fb_asymmetry.jl): `Light`. Builds the custom `modelT` configuration from a TOML file and plots forward/backward intensities together with the `(F-B)/(F+B)` asymmetry versus `m(ηπ)` or `m(η′π)`.
 
 ### Data preparation and auxiliary studies
 

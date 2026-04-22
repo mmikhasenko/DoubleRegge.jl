@@ -53,17 +53,20 @@ export intensity, phase
 export phi_asymmetry, phi_asymmetry_2d
 include("observables.jl")
 
-export α_a2, α_f2, α_ℙ, α_a2′, α_π1
+export α_a2, α_f2, α_ℙ
 export modelDR
 export trajectory
-export Vertex
 export ReggeExchange
-export EventKinematics
 export DoubleReggeModel
 export with_parameters
-export six_exchanges, ten_exchanges
-export v_ππ1η, v_πa2η, v_πa2′η, v_πf2π, v_πℙπ, v_pf2p, v_pℙp
+export six_exchanges
 include("modelD.jl")
+
+export αT_a2, αT_f2, αT_ℙ, αT_a2′, αT_π1
+export TVertex, TReggeExchange, TEventKinematics, TDoubleReggeModel
+export ten_exchanges_T
+export vT_ππ1η, vT_πa2η, vT_πa2′η, vT_πf2π, vT_πℙπ, vT_pf2p, vT_pℙp
+include("modelT.jl")
 
 export bootstrap_band, slice
 include("bootstrap.jl")

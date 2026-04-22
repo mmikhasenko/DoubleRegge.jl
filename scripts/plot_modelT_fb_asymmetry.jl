@@ -29,12 +29,12 @@ trajs = Dict(
 )
 
 verts = Dict(
-    k => Vertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
+    k => TVertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
     for (k, v) in parsed["vertices"]
 )
 
-const exchanges = ReggeExchange[
-    ReggeExchange(
+const exchanges = TReggeExchange[
+    TReggeExchange(
         verts[ex["top"]],
         verts[ex["bot"]],
         Bool(ex["eta_forward"]),
@@ -44,7 +44,7 @@ const exchanges = ReggeExchange[
 ]
 
 const pars = Float64.(parsed["fit_results"]["fit_minimizer"])
-const model = DoubleReggeModel(
+const model = TDoubleReggeModel(
     exchanges,
     fixed_t2,
     scalar_α,
