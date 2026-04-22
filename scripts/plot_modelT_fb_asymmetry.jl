@@ -14,43 +14,20 @@ isfile(settings_file) || error(
 )
 parsed = TOML.parsefile(settings_file)
 
-const settings = parsed["settings"]
+const config = load_modelT_config(parsed)
+const settings = config.settings
 const tag = settings["tag"]
-const scalar_α = Float64(settings["scalar_α"])
-const s2shift = Float64(get(settings, "s2shift", 0.0))
-const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+const reaction_system = config.reaction_system
 const fixed_t2 = parse(Float64, get(ENV, "DR_T2", string(get(settings, "t2", -0.1))))
 
 mkpath(joinpath("data", "exp_pro", tag))
-
-trajs = Dict(
-    k => trajectory(Float64(v["slope"]), Float64(v["intercept"]))
-    for (k, v) in parsed["trajectories"]
-)
-
-verts = Dict(
-    k => TVertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
-    for (k, v) in parsed["vertices"]
-)
-
-const exchanges = TReggeExchange[
-    TReggeExchange(
-        verts[ex["top"]],
-        verts[ex["bot"]],
-        Bool(ex["eta_forward"]),
-        ex["label"],
-    )
-    for ex in parsed["exchanges"]
-]
-
-const pars = Float64.(parsed["fit_results"]["fit_minimizer"])
 const model = TDoubleReggeModel(
-    exchanges,
+    config.model.exchanges,
     fixed_t2,
-    scalar_α,
+    config.model.scalar_α,
     reaction_system,
-    pars;
-    s2shift = s2shift,
+    config.model.pars;
+    s2shift = config.model.s2shift,
 )
 
 channel_label(system) = system.name == :compass_η′π ? "η′π" : "ηπ"
@@ -80,7 +57,7 @@ model_integral_backward(m) =
 asymmetry(f, b) = (f - b) / (f + b)
 
 const masses = collect(range(m_min, m_max; length = m_points))
-@info "Built model" tag = tag system = reaction_system.name t2 = fixed_t2 npars = length(pars)
+@info "Built model" tag = tag system = reaction_system.name t2 = fixed_t2 npars = length(model.pars)
 @info "Evaluating forward/backward asymmetry" m_min = m_min m_max = m_max m_points = m_points
 
 const forward = model_integral_forward.(masses)

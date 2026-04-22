@@ -15,40 +15,16 @@ settings_file = get(ENV, "DR_SETTINGS", "data/exp_pro/my_model/model-settings.to
 isfile(settings_file) || error("Settings file not found: $settings_file\nSet DR_SETTINGS env var to override.")
 parsed = TOML.parsefile(settings_file)
 
-const settings   = parsed["settings"]
+const config = load_modelT_config(parsed)
+const settings   = config.settings
 const tag        = settings["tag"]
-const scalar_α   = Float64(settings["scalar_α"])
-const s2shift    = Float64(get(settings, "s2shift", 0.0))
-const reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+const reaction_system = config.reaction_system
 const pathtoevents = settings["pathtoevents"]
 const treename   = get(settings, "treename", "ProgramVariables")
 
 mkpath(joinpath("data", "exp_pro", tag))
 
-# ─── Build model from TOML ───────────────────────────────────────────────────
-
-trajs = Dict(
-    k => trajectory(Float64(v["slope"]), Float64(v["intercept"]))
-    for (k, v) in parsed["trajectories"]
-)
-
-verts = Dict(
-    k => TVertex(trajs[v["trajectory"]], Float64(v["b"]), Float64(v["tau"]))
-    for (k, v) in parsed["vertices"]
-)
-
-const exchanges = TReggeExchange[
-    TReggeExchange(
-        verts[ex["top"]],
-        verts[ex["bot"]],
-        Bool(ex["eta_forward"]),
-        ex["label"],
-    )
-    for ex in parsed["exchanges"]
-]
-
-const pars = Float64.(parsed["fit_results"]["fit_minimizer"])
-const model = TDoubleReggeModel(exchanges, 0.0, scalar_α, reaction_system, pars; s2shift = s2shift)
+const model = config.model
 
 # ─── Load events from ROOT ───────────────────────────────────────────────────
 

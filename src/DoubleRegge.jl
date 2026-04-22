@@ -15,6 +15,7 @@ using UnROOT
 using Optim
 using Cuba
 using GSL
+using TOML
 
 export TwoParticleDiffraction
 export ReactionSystem
@@ -62,10 +63,8 @@ export with_parameters
 export six_exchanges
 include("modelD.jl")
 
-export αT_a2, αT_f2, αT_ℙ, αT_a2′, αT_π1
 export TVertex, TReggeExchange, TEventKinematics, TDoubleReggeModel
-export ten_exchanges_T
-export vT_ππ1η, vT_πa2η, vT_πa2′η, vT_πf2π, vT_πℙπ, vT_pf2p, vT_pℙp
+export load_modelT_config, load_modelT_from_toml
 include("modelT.jl")
 
 export bootstrap_band, slice

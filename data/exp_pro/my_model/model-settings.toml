@@ -27,76 +27,84 @@ pom_pi  = { trajectory = "pomeron", b =  0.681,  tau =  1 }
 pf2p    = { trajectory = "f2",      b =  1.054,  tau =  1 }
 ppomp   = { trajectory = "pomeron", b =  1.468,  tau =  1 }
 
-[[exchanges]]
+[couplings]
+c_pi1_f2 = -1.02
+c_pi1_pom = 0.0032
+c_a2_f2 = 0.074
+c_a2_pom = 0.0097
+c_a2p_f2 = -26.0
+c_a2p_pom = 0.25
+c_f2_f2 = -0.330
+c_f2_pom = -0.0063
+c_pom_f2 = -0.0035
+c_pom_pom = 0.00136
+
+[[diagrams]]
 top = "pi1_eta"
 bot = "pf2p"
 eta_forward = true
 label = "π1/f2"
+coupling = "c_pi1_f2"
 
-[[exchanges]]
+[[diagrams]]
 top = "pi1_eta"
 bot = "ppomp"
 eta_forward = true
 label = "π1/ℙ"
+coupling = "c_pi1_pom"
 
-[[exchanges]]
+[[diagrams]]
 top = "a2_eta"
 bot = "pf2p"
 eta_forward = true
 label = "a2/f2"
+coupling = "c_a2_f2"
 
-[[exchanges]]
+[[diagrams]]
 top = "a2_eta"
 bot = "ppomp"
 eta_forward = true
 label = "a2/ℙ"
+coupling = "c_a2_pom"
 
-[[exchanges]]
+[[diagrams]]
 top = "a2p_eta"
 bot = "pf2p"
 eta_forward = true
 label = "a2′/f2"
+coupling = "c_a2p_f2"
 
-[[exchanges]]
+[[diagrams]]
 top = "a2p_eta"
 bot = "ppomp"
 eta_forward = true
 label = "a2′/ℙ"
+coupling = "c_a2p_pom"
 
-[[exchanges]]
+[[diagrams]]
 top = "f2_pi"
 bot = "pf2p"
 eta_forward = false
 label = "f2/f2"
+coupling = "c_f2_f2"
 
-[[exchanges]]
+[[diagrams]]
 top = "f2_pi"
 bot = "ppomp"
 eta_forward = false
 label = "f2/ℙ"
+coupling = "c_f2_pom"
 
-[[exchanges]]
+[[diagrams]]
 top = "pom_pi"
 bot = "pf2p"
 eta_forward = false
 label = "ℙ/f2"
+coupling = "c_pom_f2"
 
-[[exchanges]]
+[[diagrams]]
 top = "pom_pi"
 bot = "ppomp"
 eta_forward = false
 label = "ℙ/ℙ"
-
-[fit_results]
-fit_minimizer = [
-    -1.02,
-     0.0032,
-     0.074,
-     0.0097,
-    -26.0,
-     0.25,
-    -0.330,
-    -0.0063,
-    -0.0035,
-     0.00136,
-]
+coupling = "c_pom_pom"

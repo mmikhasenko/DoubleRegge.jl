@@ -1,9 +1,3 @@
-const αT_a2 = trajectory(0.917, 0.44)
-const αT_f2 = trajectory(0.917, 0.44)
-const αT_ℙ = trajectory(0.25, 1.08)
-const αT_a2′ = trajectory(0.917, -0.56)
-const αT_π1 = trajectory(0.68, -0.74)
-
 struct TVertex{T}
     α::T
     b::Float64
@@ -23,16 +17,6 @@ TReggeExchange(α_top, α_bot, η_forward::Bool, label::AbstractString) = TRegge
     η_forward,
     label,
 )
-
-Base.getindex(exchange::TReggeExchange, i::Int) =
-    i == 1 ? exchange.top.α :
-    i == 2 ? exchange.bot.α :
-    i == 3 ? exchange.η_forward :
-    i == 4 ? exchange.label :
-    throw(BoundsError(exchange, i))
-
-Base.firstindex(::TReggeExchange) = 1
-Base.lastindex(::TReggeExchange) = 4
 
 struct TDoubleReggeModel{E<:AbstractVector,P,R}
     exchanges::E
@@ -85,12 +69,12 @@ function _modelTR_core(
     t,
     t2,
     K;
-    α′::Float64 = 0.9,
-    s2shift::Float64 = 0.0,
-    τ1::Float64 = 1.0,
-    τ2::Float64 = 1.0,
-    b_top::Float64 = 0.0,
-    b_bot::Float64 = 0.0,
+    α′::Float64,
+    s2shift::Float64,
+    τ1::Float64,
+    τ2::Float64,
+    b_top::Float64,
+    b_bot::Float64,
 )
     prefactor =
         -K * sf_gamma(1 - α1) * sf_gamma(1 - α2) * (α′ * s1)^α1 *
@@ -113,13 +97,13 @@ function modelDR(
     vars,
     system,
     ::Type{TDoubleReggeModel};
-    η_forward::Bool = true,
-    α′::Float64 = 0.9,
-    s2shift::Float64 = 0.0,
-    τ1::Float64 = 1.0,
-    τ2::Float64 = 1.0,
-    b_top::Float64 = 0.0,
-    b_bot::Float64 = 0.0,
+    η_forward::Bool,
+    α′::Float64,
+    s2shift::Float64,
+    τ1::Float64,
+    τ2::Float64,
+    b_top::Float64,
+    b_bot::Float64,
 )
     @unpack s, s1, cosθ, ϕ, t2 = vars
     t = η_forward ? t1(vars, system) : tπ(vars, system)
@@ -229,23 +213,73 @@ function amplitude(model::TDoubleReggeModel, ev::TEventKinematics)
     return mysum(typeof(1im * model.pars[1]), generator)
 end
 
-const vT_ππ1η = TVertex(αT_π1, -0.0882, -1.0)
-const vT_πa2η = TVertex(αT_a2, -0.192, 1.0)
-const vT_πa2′η = TVertex(αT_a2′, 38.0, 1.0)
-const vT_πf2π = TVertex(αT_f2, 1.432, 1.0)
-const vT_πℙπ = TVertex(αT_ℙ, 0.681, 1.0)
-const vT_pf2p = TVertex(αT_f2, 1.054, 1.0)
-const vT_pℙp = TVertex(αT_ℙ, 1.468, 1.0)
+function _get_tmodel_couplings(parsed, diagrams)
+    if haskey(parsed, "couplings")
+        couplings = parsed["couplings"]
+        return Float64[
+            Float64(couplings[get(diagram, "coupling", diagram["label"])]) for diagram in diagrams
+        ]
+    end
+    if haskey(parsed, "fit_results") && haskey(parsed["fit_results"], "fit_minimizer")
+        return Float64.(parsed["fit_results"]["fit_minimizer"])
+    end
+    throw(ArgumentError("expected either [couplings] or [fit_results].fit_minimizer in modelT config"))
+end
 
-const ten_exchanges_T = TReggeExchange[
-    TReggeExchange(vT_ππ1η, vT_pf2p, true, "π1/f2"),
-    TReggeExchange(vT_ππ1η, vT_pℙp, true, "π1/ℙ"),
-    TReggeExchange(vT_πa2η, vT_pf2p, true, "a2/f2"),
-    TReggeExchange(vT_πa2η, vT_pℙp, true, "a2/ℙ"),
-    TReggeExchange(vT_πa2′η, vT_pf2p, true, "a2′/f2"),
-    TReggeExchange(vT_πa2′η, vT_pℙp, true, "a2′/ℙ"),
-    TReggeExchange(vT_πf2π, vT_pf2p, false, "f2/f2"),
-    TReggeExchange(vT_πf2π, vT_pℙp, false, "f2/ℙ"),
-    TReggeExchange(vT_πℙπ, vT_pf2p, false, "ℙ/f2"),
-    TReggeExchange(vT_πℙπ, vT_pℙp, false, "ℙ/ℙ"),
-]
+function load_modelT_config(parsed; settings_key::AbstractString = "settings")
+    settings = parsed[settings_key]
+    reaction_system = getproperty(DoubleRegge, Symbol(settings["system"]))
+
+    trajectories = Dict(
+        key => trajectory(Float64(value["slope"]), Float64(value["intercept"]))
+        for (key, value) in parsed["trajectories"]
+    )
+
+    vertices = Dict(
+        key => TVertex(
+            trajectories[value["trajectory"]],
+            Float64(get(value, "b", 0.0)),
+            Float64(get(value, "tau", 1.0)),
+        ) for (key, value) in parsed["vertices"]
+    )
+
+    diagrams = haskey(parsed, "diagrams") ? parsed["diagrams"] :
+               haskey(parsed, "exchanges") ? parsed["exchanges"] :
+               throw(ArgumentError("expected [[diagrams]] or [[exchanges]] in modelT config"))
+
+    exchanges = TReggeExchange[
+        TReggeExchange(
+            vertices[diagram["top"]],
+            vertices[diagram["bot"]],
+            Bool(diagram["eta_forward"]),
+            diagram["label"],
+        ) for diagram in diagrams
+    ]
+
+    pars = _get_tmodel_couplings(parsed, diagrams)
+    length(exchanges) == length(pars) || throw(
+        DimensionMismatch("expected $(length(exchanges)) couplings, got $(length(pars))"),
+    )
+
+    model = TDoubleReggeModel(
+        exchanges,
+        Float64(get(settings, "t2", 0.0)),
+        Float64(settings["scalar_α"]),
+        reaction_system,
+        pars;
+        s2shift = Float64(get(settings, "s2shift", 0.0)),
+    )
+
+    return (
+        model = model,
+        settings = settings,
+        reaction_system = reaction_system,
+        trajectories = trajectories,
+        vertices = vertices,
+        diagrams = diagrams,
+        couplings = pars,
+    )
+end
+
+load_modelT_from_toml(path::AbstractString; settings_key::AbstractString = "settings") =
+    load_modelT_config(TOML.parsefile(path); settings_key = settings_key)
