@@ -11,6 +11,7 @@ struct TReggeExchange{T1,T2,S<:AbstractString}
     bot::TVertex{T2}
     η_forward::Bool
     label::S
+    α′::Float64
 end
 
 # ─── Kinematics ──────────────────────────────────────────────────────────────
@@ -64,7 +65,6 @@ end
 struct TDoubleReggeModel{E<:AbstractVector,P,R}
     exchanges::E
     t2::Float64
-    scalar_α::Float64
     reaction_system::R
     pars::P
 end
@@ -72,7 +72,6 @@ end
 function TDoubleReggeModel(
     exchanges,
     t2::Real,
-    scalar_α::Real,
     reaction_system,
     pars,
 )
@@ -82,7 +81,6 @@ function TDoubleReggeModel(
     return TDoubleReggeModel(
         exchanges,
         Float64(t2),
-        Float64(scalar_α),
         reaction_system,
         pars,
     )
@@ -91,7 +89,6 @@ end
 with_parameters(model::TDoubleReggeModel, pars) = TDoubleReggeModel(
     model.exchanges,
     model.t2,
-    model.scalar_α,
     model.reaction_system,
     pars,
 )
@@ -99,14 +96,15 @@ with_parameters(model::TDoubleReggeModel, pars) = TDoubleReggeModel(
 # ─── Amplitude ───────────────────────────────────────────────────────────────
 
 """
-    modelDR(exchange::TReggeExchange, kin::KinematicsM; α′)
+    amplitude(exchange::TReggeExchange, kin::KinematicsM)
 
 Core single-diagram amplitude. Works purely on Mandelstam + K: no reaction
 system is needed here. The choice of `(t, s2)` inside a diagram is driven by
-`exchange.η_forward`.
+`exchange.η_forward`, and the Regge slope `α′` is carried by `exchange.α′`.
 """
-function modelDR(exchange::TReggeExchange, kin::KinematicsM; α′::Float64=0.9)
+function amplitude(exchange::TReggeExchange, kin::KinematicsM)
     top, bot = exchange.top, exchange.bot
+    α′ = exchange.α′
     t = exchange.η_forward ? kin.t1 : kin.tπ
     s2 = exchange.η_forward ? kin.s23 : kin.s13
 
@@ -131,22 +129,18 @@ function modelDR(exchange::TReggeExchange, kin::KinematicsM; α′::Float64=0.9)
 end
 
 """
-    modelDR(exchange, gj::KinematicsGJ, reaction_system; α′)
+    amplitude(exchange, gj::KinematicsGJ, reaction_system)
 
 Convenience wrapper that converts GJ → Mandelstam on the fly.
 """
-modelDR(
-    exchange::TReggeExchange,
-    gj::KinematicsGJ,
-    reaction_system;
-    α′::Float64=0.9,
-) = modelDR(exchange, KinematicsM(gj, reaction_system); α′=α′)
+amplitude(exchange::TReggeExchange, gj::KinematicsGJ, reaction_system) =
+    amplitude(exchange, KinematicsM(gj, reaction_system))
 
 # ─── Full amplitude (sum over diagrams) ──────────────────────────────────────
 
 function amplitude(model::TDoubleReggeModel, kin::KinematicsM)
     generator = (
-        p * modelDR(exchange, kin; α′=model.scalar_α)
+        p * amplitude(exchange, kin)
         for (p, exchange) in zip(model.pars, model.exchanges)
     )
     return mysum(typeof(1im * model.pars[1]), generator)
@@ -196,12 +190,14 @@ function load_modelT_config(parsed; settings_key::AbstractString="settings")
                haskey(parsed, "exchanges") ? parsed["exchanges"] :
                throw(ArgumentError("expected [[diagrams]] or [[exchanges]] in modelT config"))
 
+    α′_default = Float64(settings["scalar_α"])
     exchanges = TReggeExchange[
         TReggeExchange(
             vertices[diagram["top"]],
             vertices[diagram["bot"]],
             Bool(diagram["eta_forward"]),
             diagram["label"],
+            Float64(get(diagram, "scalar_α", α′_default)),
         ) for diagram in diagrams
     ]
 
@@ -213,7 +209,6 @@ function load_modelT_config(parsed; settings_key::AbstractString="settings")
     model = TDoubleReggeModel(
         exchanges,
         Float64(get(settings, "t2", 0.0)),
-        Float64(settings["scalar_α"]),
         reaction_system,
         pars,
     )

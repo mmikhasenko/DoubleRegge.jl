@@ -11,12 +11,11 @@ const ηπ_system_T = compass_ηπ
     parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
     config = load_modelT_config(parsed)
     pars = [1.0, -0.5]
-    model = TDoubleReggeModel(config.model.exchanges[1:2], -0.2, 0.8, ηπ_system_T, pars)
+    model = TDoubleReggeModel(config.model.exchanges[1:2], -0.2, ηπ_system_T, pars)
     updated = with_parameters(model, [2.0, 3.0])
     @test updated.pars == [2.0, 3.0]
     @test updated.exchanges === model.exchanges
     @test updated.t2 == model.t2
-    @test updated.scalar_α == model.scalar_α
     @test updated.reaction_system === model.reaction_system
 end
 
@@ -32,13 +31,14 @@ end
 @testset "modelT exchange runs" begin
     α_top = trajectory(0.917, 0.44)
     α_bot = trajectory(0.25, 1.08)
-    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ")
+    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ", 0.85)
     @test exchange.top.α === α_top
     @test exchange.bot.α === α_bot
     @test exchange.η_forward == true
     @test exchange.label == "a2/ℙ"
+    @test exchange.α′ == 0.85
     gj = KinematicsGJ(ηπ_system_T.s0, 4.0^2, 0.4, π / 4, -0.45)
-    amp = modelDR(exchange, gj, ηπ_system_T; α′ = 0.85)
+    amp = amplitude(exchange, gj, ηπ_system_T)
     @test isfinite(real(amp))
     @test isfinite(imag(amp))
 end
@@ -49,9 +49,9 @@ end
     gj = KinematicsGJ(ηπ_system_T.s0, 4.0^2, 0.4, π / 4, -0.45)
     kin = KinematicsM(gj, ηπ_system_T)
 
-    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ")
-    direct   = modelDR(exchange, kin;  α′ = 0.85)
-    via_gj   = modelDR(exchange, gj, ηπ_system_T; α′ = 0.85)
+    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ", 0.85)
+    direct   = amplitude(exchange, kin)
+    via_gj   = amplitude(exchange, gj, ηπ_system_T)
     @test direct ≈ via_gj
 
     # form factors multiply in at both vertices
@@ -61,8 +61,9 @@ end
         TVertex(α_bot, b_bot, 1.0),
         true,
         "a2/ℙ-ff",
+        0.85,
     )
-    amp_ff = modelDR(ex_ff, kin; α′ = 0.85)
+    amp_ff = amplitude(ex_ff, kin)
     @test amp_ff ≈ direct * form_factor(ex_ff.top, kin.t1) * form_factor(ex_ff.bot, kin.t2)
 end
 
@@ -72,8 +73,7 @@ end
     gj = KinematicsGJ(ηπ_system_T.s0, 2.32^2, cos(π / 3), π / 4, -0.2)
     kin = KinematicsM(gj, ηπ_system_T)
     exchange = config.model.exchanges[3]
-    @test modelDR(exchange, gj, ηπ_system_T; α′ = 0.8) ≈
-          modelDR(exchange, kin; α′ = 0.8)
+    @test amplitude(exchange, gj, ηπ_system_T) ≈ amplitude(exchange, kin)
 end
 
 @testset "modelT amplitude runs" begin
@@ -82,7 +82,6 @@ end
     model = TDoubleReggeModel(
         config.model.exchanges,
         -0.2,
-        0.8,
         ηπ_system_T,
         ones(length(config.model.exchanges)),
     )
@@ -105,4 +104,5 @@ end
     @test length(config.model.pars) == 10
     @test config.model.pars[1] == parsed["couplings"]["c_pi1_f2"]
     @test config.diagrams[1]["coupling"] == "c_pi1_f2"
+    @test all(ex.α′ == parsed["settings"]["scalar_α"] for ex in config.model.exchanges)
 end

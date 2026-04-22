@@ -24,7 +24,6 @@ const model = if haskey(ENV, "DR_T2")
     TDoubleReggeModel(
         config.model.exchanges,
         parse(Float64, ENV["DR_T2"]),
-        config.model.scalar_α,
         reaction_system,
         config.model.pars,
     )
