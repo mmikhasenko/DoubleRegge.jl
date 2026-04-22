@@ -4,7 +4,7 @@ using DrWatson
 using TOML
 using Plots
 import Plots.PlotMeasures.mm
-theme(:wong2; size = (700, 350), bottom_margin = 5mm)
+theme(:wong2; size=(700, 350), bottom_margin=5mm)
 
 using DoubleRegge
 
@@ -33,9 +33,10 @@ end
 const fixed_t2 = model.t2
 
 channel_label(system) = system.name == :compass_η′π ? "η′π" : "ηπ"
-mass_threshold(system) = let ch = system.channel
-    ch.m1 + ch.m2
-end
+mass_threshold(system) =
+    let ch = system.channel
+        ch.m1 + ch.m2
+    end
 
 const default_m_min = Float64(get(settings, "m_min", mass_threshold(reaction_system) + 0.01))
 const default_m_max = Float64(get(settings, "m_max", 3.0))
@@ -58,7 +59,7 @@ model_integral_backward(m) =
 
 asymmetry(f, b) = (f - b) / (f + b)
 
-const masses = collect(range(m_min, m_max; length = m_points))
+const masses = collect(range(m_min, m_max; length=m_points))
 @info "Built model" tag = tag system = reaction_system.name t2 = fixed_t2 npars = length(model.pars)
 @info "Evaluating forward/backward asymmetry" m_min = m_min m_max = m_max m_points = m_points
 
@@ -71,15 +72,15 @@ mass_label = channel_label(reaction_system)
 
 let
     plot(
-        size = (900, 350),
-        layout = grid(1, 2),
-        title = ["forward/backward intensity" "forward-backward asymmetry"],
-        xlab = ["m($mass_label) (GeV)" "m($mass_label) (GeV)"],
-        ylab = ["intensity" "(F-B) / (F+B)"],
+        size=(900, 350),
+        layout=grid(1, 2),
+        title=["forward/backward intensity" "forward-backward asymmetry"],
+        xlab=["m($mass_label) (GeV)" "m($mass_label) (GeV)"],
+        ylab=["intensity" "(F-B) / (F+B)"],
     )
-    plot!(sp = 1, masses, forward, lw = 2, lab = "forward", seriescolor = 3)
-    plot!(sp = 1, masses, backward, lw = 2, lab = "backward", seriescolor = 4)
-    plot!(sp = 2, masses, fb_asymmetry, lw = 2, lab = "", ylim = (-1, 1))
+    plot!(sp=1, masses, forward, lw=2, lab="forward", seriescolor=3)
+    plot!(sp=1, masses, backward, lw=2, lab="backward", seriescolor=4)
+    plot!(sp=2, masses, fb_asymmetry, lw=2, lab="", ylim=(-1, 1))
     savefig(outfile)
 end
 
