@@ -11,41 +11,61 @@ const ηπ_system_T = compass_ηπ
     parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
     config = load_modelT_config(parsed)
     pars = [1.0, -0.5]
-    model = TDoubleReggeModel(config.model.exchanges[1:2], -0.2, 0.8, ηπ_system_T, pars; s2shift = 0.05)
+    model = TDoubleReggeModel(config.model.exchanges[1:2], -0.2, 0.8, ηπ_system_T, pars)
     updated = with_parameters(model, [2.0, 3.0])
     @test updated.pars == [2.0, 3.0]
     @test updated.exchanges === model.exchanges
     @test updated.t2 == model.t2
     @test updated.scalar_α == model.scalar_α
     @test updated.reaction_system === model.reaction_system
-    @test updated.s2shift == model.s2shift
 end
 
-@testset "modelT exchange compatibility" begin
+@testset "modelT form factor dispatch" begin
+    α_top = trajectory(0.917, 0.44)
+    α_bot = trajectory(0.25, 1.08)
+    top = TVertex(α_top, -0.5, 1.0)
+    bot = TVertex(α_bot, 0.3, -1.0)
+    @test form_factor(top, -0.4) ≈ exp(-0.5 * -0.4)
+    @test form_factor(bot, -0.1) ≈ exp(0.3 * -0.1)
+end
+
+@testset "modelT exchange runs" begin
     α_top = trajectory(0.917, 0.44)
     α_bot = trajectory(0.25, 1.08)
     exchange = TReggeExchange(α_top, α_bot, true, "a2/ℙ")
-    vars = (s = ηπ_system_T.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π / 4, t2 = -0.45)
-    direct = modelDR(
-        α_top,
-        α_bot,
-        vars,
-        ηπ_system_T,
-        TDoubleReggeModel;
-        η_forward = true,
-        α′ = 0.85,
-        s2shift = 0.1,
-        τ1 = 1.0,
-        τ2 = 1.0,
-        b_top = 0.0,
-        b_bot = 0.0,
-    )
-    typed = modelDR(exchange, vars, ηπ_system_T; α′ = 0.85, s2shift = 0.1)
-    @test typed ≈ direct
     @test exchange.top.α === α_top
     @test exchange.bot.α === α_bot
     @test exchange.η_forward == true
     @test exchange.label == "a2/ℙ"
+    vars = (s = ηπ_system_T.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π / 4, t2 = -0.45)
+    amp = modelDR(exchange, vars, ηπ_system_T; α′ = 0.85)
+    @test isfinite(real(amp))
+    @test isfinite(imag(amp))
+end
+
+@testset "modelT TKinematics + _modelTR_core" begin
+    α_top = trajectory(0.917, 0.44)
+    α_bot = trajectory(0.25, 1.08)
+    vars = (s = ηπ_system_T.s0, s1 = 4.0^2, cosθ = 0.4, ϕ = π / 4, t2 = -0.45)
+    t = DoubleRegge.t1(vars, ηπ_system_T)
+    s2 = DoubleRegge.sπp(vars, ηπ_system_T)
+    K = DoubleRegge.Kfactor(vars, ηπ_system_T)
+    kin = TKinematics(vars.s, vars.s1, s2, t, vars.t2)
+
+    exchange = TReggeExchange(α_top, α_bot, true, "a2/ℙ")
+    direct = DoubleRegge._modelTR_core(exchange.top, exchange.bot, kin, K; α′ = 0.85)
+    via_vars = modelDR(exchange, vars, ηπ_system_T; α′ = 0.85)
+    @test direct ≈ via_vars
+
+    b_top, b_bot = -0.5, 0.3
+    ex_ff = TReggeExchange(
+        TVertex(α_top, b_top, 1.0),
+        TVertex(α_bot, b_bot, 1.0),
+        true,
+        "a2/ℙ-ff",
+    )
+    amp_ff = modelDR(ex_ff, vars, ηπ_system_T; α′ = 0.85)
+    @test amp_ff ≈ via_vars * form_factor(ex_ff.top, t) * form_factor(ex_ff.bot, vars.t2)
 end
 
 @testset "modelT EventKinematics path" begin
@@ -65,8 +85,8 @@ end
         DoubleRegge.Kfactor(vars, ηπ_system_T),
     )
     exchange = config.model.exchanges[3]
-    @test modelDR(exchange, vars, ηπ_system_T; α′ = 0.8, s2shift = 0.1) ≈
-          modelDR(exchange, ev; α′ = 0.8, s2shift = 0.1)
+    @test modelDR(exchange, vars, ηπ_system_T; α′ = 0.8) ≈
+          modelDR(exchange, ev; α′ = 0.8)
 end
 
 @testset "modelT amplitude runs" begin

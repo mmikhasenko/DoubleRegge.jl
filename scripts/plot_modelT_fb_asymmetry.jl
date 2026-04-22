@@ -18,17 +18,20 @@ const config = load_modelT_config(parsed)
 const settings = config.settings
 const tag = settings["tag"]
 const reaction_system = config.reaction_system
-const fixed_t2 = parse(Float64, get(ENV, "DR_T2", string(get(settings, "t2", -0.1))))
 
 mkpath(joinpath("data", "exp_pro", tag))
-const model = TDoubleReggeModel(
-    config.model.exchanges,
-    fixed_t2,
-    config.model.scalar_α,
-    reaction_system,
-    config.model.pars;
-    s2shift = config.model.s2shift,
-)
+const model = if haskey(ENV, "DR_T2")
+    TDoubleReggeModel(
+        config.model.exchanges,
+        parse(Float64, ENV["DR_T2"]),
+        config.model.scalar_α,
+        reaction_system,
+        config.model.pars,
+    )
+else
+    config.model
+end
+const fixed_t2 = model.t2
 
 channel_label(system) = system.name == :compass_η′π ? "η′π" : "ηπ"
 mass_threshold(system) = let ch = system.channel

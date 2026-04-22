@@ -4,6 +4,8 @@ struct TVertex{T}
     τ::Float64
 end
 
+form_factor(v::TVertex, t) = exp(v.b * t)
+
 struct TReggeExchange{T1,T2,S<:AbstractString}
     top::TVertex{T1}
     bot::TVertex{T2}
@@ -18,13 +20,20 @@ TReggeExchange(α_top, α_bot, η_forward::Bool, label::AbstractString) = TRegge
     label,
 )
 
+struct TKinematics
+    s::Float64
+    s1::Float64
+    s2::Float64
+    t::Float64
+    t2::Float64
+end
+
 struct TDoubleReggeModel{E<:AbstractVector,P,R}
     exchanges::E
     t2::Float64
     scalar_α::Float64
     reaction_system::R
     pars::P
-    s2shift::Float64
 end
 
 function TDoubleReggeModel(
@@ -32,8 +41,7 @@ function TDoubleReggeModel(
     t2::Real,
     scalar_α::Real,
     reaction_system,
-    pars;
-    s2shift::Real = 0.0,
+    pars,
 )
     length(exchanges) == length(pars) || throw(
         DimensionMismatch("expected $(length(exchanges)) parameters, got $(length(pars))"),
@@ -44,7 +52,6 @@ function TDoubleReggeModel(
         Float64(scalar_α),
         reaction_system,
         pars,
-        Float64(s2shift),
     )
 end
 
@@ -53,34 +60,27 @@ with_parameters(model::TDoubleReggeModel, pars) = TDoubleReggeModel(
     model.t2,
     model.scalar_α,
     model.reaction_system,
-    pars;
-    s2shift = model.s2shift,
+    pars,
 )
 
 _model_vars(model::TDoubleReggeModel, m, cosθ, ϕ) =
     (s = model.reaction_system.s0, s1 = m^2, cosθ = cosθ, ϕ = ϕ, t2 = model.t2)
 
 function _modelTR_core(
-    α1,
-    α2,
-    s,
-    s1,
-    s2,
-    t,
-    t2,
+    top::TVertex,
+    bot::TVertex,
+    kin::TKinematics,
     K;
     α′::Float64,
-    s2shift::Float64,
-    τ1::Float64,
-    τ2::Float64,
-    b_top::Float64,
-    b_bot::Float64,
 )
+    α1 = top.α(kin.t)
+    α2 = bot.α(kin.t2)
     prefactor =
-        -K * sf_gamma(1 - α1) * sf_gamma(1 - α2) * (α′ * s1)^α1 *
-        (α′ * (s2 + s2shift))^α2 / (α′ * s)
-    form_factor = exp(b_top * t) * exp(b_bot * t2)
-    η = s / (α′ * s1 * s2)
+        -K * sf_gamma(1 - α1) * sf_gamma(1 - α2) * (α′ * kin.s1)^α1 *
+        (α′ * kin.s2)^α2 / (α′ * kin.s)
+    ff = form_factor(top, kin.t) * form_factor(bot, kin.t2)
+    η = kin.s / (α′ * kin.s1 * kin.s2)
+    τ1, τ2 = top.τ, bot.τ
     vertex = 0.0im
     ξ1 = ξ(τ1, α1)
     ξ21 = ξ(τ2, τ1, α2, α1)
@@ -88,78 +88,28 @@ function _modelTR_core(
     ξ2 = ξ(τ2, α2)
     ξ12 = ξ(τ1, τ2, α1, α2)
     vertex += η^α2 * ξ2 * ξ12 * V(α2, α1, η)
-    return form_factor * prefactor * vertex
+    return ff * prefactor * vertex
 end
 
 function modelDR(
-    α1oft::trajectory,
-    α2oft::trajectory,
-    vars,
-    system,
-    ::Type{TDoubleReggeModel};
-    η_forward::Bool,
-    α′::Float64,
-    s2shift::Float64,
-    τ1::Float64,
-    τ2::Float64,
-    b_top::Float64,
-    b_bot::Float64,
-)
-    @unpack s, s1, cosθ, ϕ, t2 = vars
-    t = η_forward ? t1(vars, system) : tπ(vars, system)
-    s2 = η_forward ? sπp(vars, system) : sηp(vars, system)
-    α1 = α1oft(t)
-    α2 = α2oft(t2)
-    K = Kfactor(vars, system)
-    return _modelTR_core(
-        α1,
-        α2,
-        s,
-        s1,
-        s2,
-        t,
-        t2,
-        K;
-        α′ = α′,
-        s2shift = s2shift,
-        τ1 = τ1,
-        τ2 = τ2,
-        b_top = b_top,
-        b_bot = b_bot,
-    )
-end
-
-modelDR(
     exchange::TReggeExchange,
     vars,
     reaction_system;
     α′::Float64 = 0.9,
-    s2shift::Float64 = 0.0,
-) = modelDR(
-    exchange.top.α,
-    exchange.bot.α,
-    vars,
-    reaction_system,
-    TDoubleReggeModel;
-    η_forward = exchange.η_forward,
-    α′ = α′,
-    s2shift = s2shift,
-    τ1 = exchange.top.τ,
-    τ2 = exchange.bot.τ,
-    b_top = exchange.top.b,
-    b_bot = exchange.bot.b,
 )
+    @unpack s, s1, t2 = vars
+    t = exchange.η_forward ? t1(vars, reaction_system) : tπ(vars, reaction_system)
+    s2 = exchange.η_forward ? sπp(vars, reaction_system) : sηp(vars, reaction_system)
+    K = Kfactor(vars, reaction_system)
+    kin = TKinematics(s, s1, s2, t, t2)
+    return _modelTR_core(exchange.top, exchange.bot, kin, K; α′ = α′)
+end
 
 function amplitude(model::TDoubleReggeModel, m, cosθ, ϕ)
     vars = _model_vars(model, m, cosθ, ϕ)
     generator = (
-        p * modelDR(
-            exchange,
-            vars,
-            model.reaction_system;
-            α′ = model.scalar_α,
-            s2shift = model.s2shift,
-        ) for (p, exchange) in zip(model.pars, model.exchanges)
+        p * modelDR(exchange, vars, model.reaction_system; α′ = model.scalar_α)
+        for (p, exchange) in zip(model.pars, model.exchanges)
     )
     return mysum(typeof(1im * model.pars[1]), generator)
 end
@@ -177,37 +127,16 @@ struct TEventKinematics
     K::Float64
 end
 
-function modelDR(
-    exchange::TReggeExchange,
-    ev::TEventKinematics;
-    α′::Float64 = 0.9,
-    s2shift::Float64 = 0.0,
-)
+function modelDR(exchange::TReggeExchange, ev::TEventKinematics; α′::Float64 = 0.9)
     t = exchange.η_forward ? ev.t1 : ev.tπ
     s2 = exchange.η_forward ? ev.s23 : ev.s13
-    α1 = exchange.top.α(t)
-    α2 = exchange.bot.α(ev.t2)
-    return _modelTR_core(
-        α1,
-        α2,
-        ev.s,
-        ev.s12,
-        s2,
-        t,
-        ev.t2,
-        ev.K;
-        α′ = α′,
-        s2shift = s2shift,
-        τ1 = exchange.top.τ,
-        τ2 = exchange.bot.τ,
-        b_top = exchange.top.b,
-        b_bot = exchange.bot.b,
-    )
+    kin = TKinematics(ev.s, ev.s12, s2, t, ev.t2)
+    return _modelTR_core(exchange.top, exchange.bot, kin, ev.K; α′ = α′)
 end
 
 function amplitude(model::TDoubleReggeModel, ev::TEventKinematics)
     generator = (
-        p * modelDR(exchange, ev; α′ = model.scalar_α, s2shift = model.s2shift)
+        p * modelDR(exchange, ev; α′ = model.scalar_α)
         for (p, exchange) in zip(model.pars, model.exchanges)
     )
     return mysum(typeof(1im * model.pars[1]), generator)
@@ -266,8 +195,7 @@ function load_modelT_config(parsed; settings_key::AbstractString = "settings")
         Float64(get(settings, "t2", 0.0)),
         Float64(settings["scalar_α"]),
         reaction_system,
-        pars;
-        s2shift = Float64(get(settings, "s2shift", 0.0)),
+        pars,
     )
 
     return (

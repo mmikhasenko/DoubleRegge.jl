@@ -1,7 +1,6 @@
 [settings]
 tag          = "my_model"
 "scalar_α"   = 0.8
-s2shift      = 0.0
 t2           = -0.1
 system       = "compass_ηπ"
 pathtoevents = "/home/pekeler/Desktop/PostDoc/DoubleReggeFits/EtaPi/Precalculation/MC_acc.root"
