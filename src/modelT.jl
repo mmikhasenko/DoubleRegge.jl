@@ -13,13 +13,6 @@ struct TReggeExchange{T1,T2,S<:AbstractString}
     label::S
 end
 
-TReggeExchange(α_top, α_bot, η_forward::Bool, label::AbstractString) = TReggeExchange(
-    TVertex(α_top, 0.0, 1.0),
-    TVertex(α_bot, 0.0, 1.0),
-    η_forward,
-    label,
-)
-
 # ─── Kinematics ──────────────────────────────────────────────────────────────
 #
 # Two orthogonal representations of a production-decay event are used:

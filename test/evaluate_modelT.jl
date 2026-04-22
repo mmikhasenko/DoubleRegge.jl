@@ -32,7 +32,7 @@ end
 @testset "modelT exchange runs" begin
     α_top = trajectory(0.917, 0.44)
     α_bot = trajectory(0.25, 1.08)
-    exchange = TReggeExchange(α_top, α_bot, true, "a2/ℙ")
+    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ")
     @test exchange.top.α === α_top
     @test exchange.bot.α === α_bot
     @test exchange.η_forward == true
@@ -49,7 +49,7 @@ end
     gj = KinematicsGJ(ηπ_system_T.s0, 4.0^2, 0.4, π / 4, -0.45)
     kin = KinematicsM(gj, ηπ_system_T)
 
-    exchange = TReggeExchange(α_top, α_bot, true, "a2/ℙ")
+    exchange = TReggeExchange(TVertex(α_top, 0.0, 1.0), TVertex(α_bot, 0.0, 1.0), true, "a2/ℙ")
     direct   = modelDR(exchange, kin;  α′ = 0.85)
     via_gj   = modelDR(exchange, gj, ηπ_system_T; α′ = 0.85)
     @test direct ≈ via_gj
