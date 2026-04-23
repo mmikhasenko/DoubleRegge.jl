@@ -1,0 +1,105 @@
+[settings]
+tag = "etapi_with_pi1_default"
+"scalar_α" = 0.8
+t2 = -0.1
+system = "compass_ηπ"
+m_max = 6.0
+m_points = 81
+
+[trajectories]
+a2 = { slope = 0.917, intercept = 0.44 }
+f2 = { slope = 0.917, intercept = 0.44 }
+pomeron = { slope = 0.25, intercept = 1.08 }
+a2prime = { slope = 0.917, intercept = -0.56 }
+pi1 = { slope = 0.68, intercept = -0.74 }
+
+[vertices]
+pi1_eta = { trajectory = "pi1", b = -0.0882, tau = -1 }
+a2_eta = { trajectory = "a2", b = -0.192, tau = 1 }
+a2p_eta = { trajectory = "a2prime", b = 38.0, tau = 1 }
+f2_pi = { trajectory = "f2", b = 1.432, tau = 1 }
+pom_pi = { trajectory = "pomeron", b = 0.681, tau = 1 }
+pf2p = { trajectory = "f2", b = 1.054, tau = 1 }
+ppomp = { trajectory = "pomeron", b = 1.468, tau = 1 }
+
+[couplings]
+c_pi1_f2 = -1.02
+c_pi1_pom = 0.0032
+c_a2_f2 = 0.074
+c_a2_pom = 0.0097
+c_a2p_f2 = -26.0
+c_a2p_pom = 0.25
+c_f2_f2 = -0.330
+c_f2_pom = -0.0063
+c_pom_f2 = -0.0035
+c_pom_pom = 0.00136
+
+[[diagrams]]
+top = "pi1_eta"
+bot = "pf2p"
+eta_forward = true
+label = "π1/f2"
+coupling = "c_pi1_f2"
+
+[[diagrams]]
+top = "pi1_eta"
+bot = "ppomp"
+eta_forward = true
+label = "π1/ℙ"
+coupling = "c_pi1_pom"
+
+[[diagrams]]
+top = "a2_eta"
+bot = "pf2p"
+eta_forward = true
+label = "a2/f2"
+coupling = "c_a2_f2"
+
+[[diagrams]]
+top = "a2_eta"
+bot = "ppomp"
+eta_forward = true
+label = "a2/ℙ"
+coupling = "c_a2_pom"
+
+[[diagrams]]
+top = "a2p_eta"
+bot = "pf2p"
+eta_forward = true
+label = "a2′/f2"
+coupling = "c_a2p_f2"
+
+[[diagrams]]
+top = "a2p_eta"
+bot = "ppomp"
+eta_forward = true
+label = "a2′/ℙ"
+coupling = "c_a2p_pom"
+
+[[diagrams]]
+top = "f2_pi"
+bot = "pf2p"
+eta_forward = false
+label = "f2/f2"
+coupling = "c_f2_f2"
+
+[[diagrams]]
+top = "f2_pi"
+bot = "ppomp"
+eta_forward = false
+label = "f2/ℙ"
+coupling = "c_f2_pom"
+
+[[diagrams]]
+top = "pom_pi"
+bot = "pf2p"
+eta_forward = false
+label = "ℙ/f2"
+coupling = "c_pom_f2"
+
+[[diagrams]]
+top = "pom_pi"
+bot = "ppomp"
+eta_forward = false
+label = "ℙ/ℙ"
+coupling = "c_pom_pom"
