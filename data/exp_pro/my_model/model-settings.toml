@@ -3,9 +3,6 @@ tag = "my_model"
 "scalar_α" = 0.8
 t2 = -0.1
 system = "compass_ηπ"
-pathtoevents = "/home/pekeler/Desktop/PostDoc/DoubleReggeFits/EtaPi/Precalculation/MC_acc.root"
-treename = "ProgramVariables"
-bin_step = 0.1
 m_max = 6.0
 m_points = 81
 
