@@ -22,16 +22,6 @@ struct ReggeExchange{T1,T2,S<:AbstractString}
     label::S
 end
 
-Base.getindex(exchange::ReggeExchange, i::Int) =
-    i == 1 ? exchange.α_top :
-    i == 2 ? exchange.α_bot :
-    i == 3 ? exchange.η_forward :
-    i == 4 ? exchange.label :
-    throw(BoundsError(exchange, i))
-
-Base.firstindex(::ReggeExchange) = 1
-Base.lastindex(::ReggeExchange) = 4
-
 struct DoubleReggeModel{E<:AbstractVector,P,R}
     exchanges::E
     t2::Float64
