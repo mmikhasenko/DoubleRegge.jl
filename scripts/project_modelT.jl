@@ -23,7 +23,7 @@ using DoubleRegge
 # model definition. Environment variables can override the default mass grid
 # and t2 if desired.
 
-settings_file = get(ENV, "DR_SETTINGS", "data/exp_pro/my_model/model-settings.toml")
+settings_file = get(ENV, "DR_SETTINGS", "data/exp_pro/etapi_with_pi1_default/model-settings.toml")
 isfile(settings_file) || error(
     "Settings file not found: $settings_file\nSet DR_SETTINGS env var to override.",
 )

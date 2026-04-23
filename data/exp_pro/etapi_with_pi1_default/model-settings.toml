@@ -1,5 +1,5 @@
 [settings]
-tag = "my_model"
+tag = "etapi_with_pi1_default"
 "scalar_α" = 0.8
 t2 = -0.1
 system = "compass_ηπ"

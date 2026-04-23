@@ -8,7 +8,7 @@ using TOML
 const ηπ_system_T = compass_ηπ
 
 @testset "modelT parameter binding" begin
-    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
+    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "etapi_with_pi1_default", "model-settings.toml"))
     config = load_modelT_config(parsed)
     pars = [1.0, -0.5]
     model = TDoubleReggeModel(config.model.exchanges[1:2], -0.2, ηπ_system_T, pars)
@@ -68,7 +68,7 @@ end
 end
 
 @testset "modelT KinematicsM direct path" begin
-    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
+    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "etapi_with_pi1_default", "model-settings.toml"))
     config = load_modelT_config(parsed)
     gj = KinematicsGJ(ηπ_system_T.s0, 2.32^2, cos(π / 3), π / 4, -0.2)
     kin = KinematicsM(gj, ηπ_system_T)
@@ -77,7 +77,7 @@ end
 end
 
 @testset "modelT amplitude runs" begin
-    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
+    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "etapi_with_pi1_default", "model-settings.toml"))
     config = load_modelT_config(parsed)
     model = TDoubleReggeModel(
         config.model.exchanges,
@@ -97,7 +97,7 @@ end
 end
 
 @testset "modelT config loader" begin
-    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "my_model", "model-settings.toml"))
+    parsed = TOML.parsefile(joinpath(@__DIR__, "..", "data", "exp_pro", "etapi_with_pi1_default", "model-settings.toml"))
     config = load_modelT_config(parsed)
     @test config.reaction_system === compass_ηπ
     @test length(config.model.exchanges) == 10
