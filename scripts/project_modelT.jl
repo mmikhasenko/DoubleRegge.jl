@@ -4,9 +4,15 @@ using DrWatson
 using TOML
 using Printf
 using DelimitedFiles
+using LaTeXStrings
 using Plots
 import Plots.PlotMeasures.mm
-theme(:wong2; size=(700, 350), bottom_margin=5mm)
+theme(
+    :boxed;
+    size=(600, 450),
+    fontfamily="Computer Modern",
+    bottom_margin=5mm,
+)
 
 using DoubleRegge
 
@@ -45,7 +51,9 @@ const fixed_t2 = model.t2
 
 # ─── Mass grid ───────────────────────────────────────────────────────────────
 
-channel_label(system) = system.name == :compass_η′π ? "η′π" : "ηπ"
+channel_mass_label(system) =
+    system.name == :compass_η′π ? L"m(\eta'\pi)\,[\mathrm{GeV}]" :
+    L"m(\eta\pi)\,[\mathrm{GeV}]"
 mass_threshold(system) =
     let ch = system.channel
         ch.m1 + ch.m2
@@ -180,14 +188,14 @@ end
 
 # ─── Plots ───────────────────────────────────────────────────────────────────
 
-const ch_label = channel_label(reaction_system)
+const xlab_m = channel_mass_label(reaction_system)
 
 # Per-wave intensity panels
 let
     n = length(LMs)
     ncols = min(3, n)
     nrows = ceil(Int, n / ncols)
-    plot(layout=grid(nrows, ncols), size=(300 * ncols, 260 * nrows))
+    plot(layout=grid(nrows, ncols), size=(600 * ncols, 450 * nrows))
     for (i, (L, M)) in enumerate(LMs)
         plot!(
             sp=i,
@@ -195,9 +203,9 @@ let
             pw_intensities[:, i],
             lw=2,
             lab="",
-            title="LM=$(L)$(M)",
-            xlab=i > n - ncols ? "m($ch_label) (GeV)" : "",
-            ylab="|a_{LM}|²",
+            title=L"L\,M=%$(L)\,%$(M)",
+            xlab=i > n - ncols ? xlab_m : "",
+            ylab=L"|a_{LM}|^2",
         )
     end
     savefig(saveto("pw-projections_$(tag).pdf"))
@@ -206,13 +214,17 @@ end
 # Total intensity: full integral vs sum over expanded basis
 let
     plot(
-        size=(700, 350),
-        xlab="m($ch_label) (GeV)",
-        ylab="intensity",
-        title="modelT total intensity — $tag",
+        size=(600, 450),
+        xlab=xlab_m,
+        ylab=L"\mathrm{intensity}",
+        title="Total intensity",
     )
-    plot!(masses, full_total, lw=2, lab="full ∫|A|² dcosθ dϕ", seriescolor=1)
-    plot!(masses, pw_total, lw=2, ls=:dash, lab="Σ_{LM} |a_{LM}|² (expanded basis)", seriescolor=2)
+    plot!(masses, full_total, lw=2, lab=L"\int|A|^2\,d\cos\theta\,d\phi", seriescolor=1)
+    plot!(
+        masses, pw_total;
+        lw=2, ls=:dash, seriescolor=2,
+        lab=L"\sum_{LM}|a_{LM}|^2",
+    )
     savefig(saveto("pw-total_$(tag).pdf"))
 end
 
@@ -225,14 +237,14 @@ end
 let
     n = length(LMs)
     cum = cumsum(pw_intensities; dims=2)      # length(masses) × n
-    stack_top = hcat(zeros(length(masses)), cum, full_total)  # column 1 = 0 baseline
+    stack_top = hcat(zeros(length(masses)), cum, full_total)
 
     plot(
-        size=(800, 400),
-        xlab="m($ch_label) (GeV)",
-        ylab="intensity",
-        title="modelT stacked PW intensities — $tag",
-        leg=:outerright,
+        size=(600, 450),
+        xlab=xlab_m,
+        ylab=L"\mathrm{intensity}",
+        title="Stacked partial-wave intensities",
+        leg=:topright,
         xlim=(m_min, m_max),
     )
     for (i, (L, M)) in enumerate(LMs)
@@ -243,10 +255,9 @@ let
             fillalpha=0.75,
             lw=0,
             seriescolor=i,
-            lab="LM=$(L)$(M)",
+            lab=L"L\,M=%$(L)\,%$(M)",
         )
     end
-    # Residual above the expanded basis (L outside LMs).
     plot!(
         masses,
         stack_top[:, end];
@@ -254,10 +265,9 @@ let
         fillalpha=0.4,
         lw=0,
         seriescolor=:gray,
-        lab="L outside basis",
+        lab=L"L\,\mathrm{outside\ basis}",
     )
-    # Black outline for the full integrated intensity on top.
-    plot!(masses, full_total; lw=2, lc=:black, lab="∫|A|² dcosθ dϕ")
+    plot!(masses, full_total; lw=2, lc=:black, lab=L"\int|A|^2\,d\cos\theta\,d\phi")
     savefig(saveto("pw-stacked_$(tag).pdf"))
 end
 
@@ -269,16 +279,16 @@ let
     fHigher = 1 .- fraction_in_basis
 
     plot(
-        size=(700, 350),
-        xlab="m($ch_label) (GeV)",
-        ylab="fraction",
-        title="modelT wave-group fractions — $tag",
+        size=(600, 450),
+        xlab=xlab_m,
+        ylab=L"\mathrm{fraction}",
+        title="Wave-group fractions",
         ylim=(0, 1),
-        leg=:outerright,
+        leg=:topright,
     )
-    plot!(masses, fEven, lw=2, lab="Even L (expanded)")
-    plot!(masses, fOdd, lw=2, lab="Odd L (expanded)")
-    plot!(masses, fHigher, lw=2, lab="L outside expanded basis")
+    plot!(masses, fEven, lw=2, lab=L"\mathrm{even}\ L\ \mathrm{(expanded)}")
+    plot!(masses, fOdd, lw=2, lab=L"\mathrm{odd}\ L\ \mathrm{(expanded)}")
+    plot!(masses, fHigher, lw=2, lab=L"L\,\mathrm{outside\ basis}")
     savefig(saveto("pw-fractions_$(tag).pdf"))
 end
 
