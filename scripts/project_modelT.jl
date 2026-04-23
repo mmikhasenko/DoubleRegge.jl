@@ -195,7 +195,7 @@ let
     n = length(LMs)
     ncols = min(3, n)
     nrows = ceil(Int, n / ncols)
-    plot(layout=grid(nrows, ncols), size=(600 * ncols, 450 * nrows))
+    plot(layout=grid(nrows, ncols), size=(300 * ncols, 225 * nrows))
     for (i, (L, M)) in enumerate(LMs)
         plot!(
             sp=i,
