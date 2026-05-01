@@ -43,7 +43,7 @@ jobs:
           channel: ${{ inputs.version }}
           juliaup-version: "1.19.10"
       - name: Use Julia cache
-        uses: julia-actions/cache@v3.0.2
+        uses: julia-actions/cache@v3.1.0
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
