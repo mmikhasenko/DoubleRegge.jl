@@ -22,7 +22,7 @@ jobs:
         run: which julia
         continue-on-error: true
       - name: Install Julia, but only if it is not already available in the PATH
-        uses: julia-actions/install-juliaup@v3.1.1
+        uses: julia-actions/install-juliaup@v3.1.3
         with:
           channel: "1.11.5"
           juliaup-version: "1.19.10"
