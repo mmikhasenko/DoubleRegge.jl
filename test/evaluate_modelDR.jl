@@ -25,6 +25,10 @@ let
     direct = modelDR(α_a2, α_ℙ, vars, ηπ_system; η_forward = true, α′ = 0.85, s2shift = 0.1)
     typed = modelDR(exchange, vars, ηπ_system; α′ = 0.85, s2shift = 0.1)
     @test typed ≈ direct
+    @test exchange.α_top === α_a2
+    @test exchange.α_bot === α_ℙ
+    @test exchange.η_forward == true
+    @test exchange.label == "a2/ℙ"
 end
 
 let
